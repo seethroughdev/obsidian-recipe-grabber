@@ -7,9 +7,12 @@ import {
 	Plugin,
 	PluginSettingTab,
 	Setting,
+	requestUrl,
 } from "obsidian";
 import * as c from "./constants";
+import * as cheerio from "cheerio";
 import * as settings from "./settings";
+import { CheerioAPI } from "cheerio";
 
 export default class RecipeGrabber extends Plugin {
 	settings: settings.PluginSettings;
@@ -19,7 +22,7 @@ export default class RecipeGrabber extends Plugin {
 
 		// This creates an icon in the left ribbon.
 		this.addRibbonIcon("dice", c.PLUGIN_NAME, (evt: MouseEvent) => {
-			new Notice("Hello!");
+			new LoadRecipeModal(this.app).open();
 		});
 
 		// This adds a simple command that can be triggered anywhere
@@ -27,7 +30,7 @@ export default class RecipeGrabber extends Plugin {
 			id: c.CMD_OPEN_MODAL,
 			name: "Grab Recipe",
 			callback: () => {
-				new SampleModal(this.app).open();
+				new LoadRecipeModal(this.app).open();
 			},
 		});
 
@@ -71,14 +74,74 @@ export default class RecipeGrabber extends Plugin {
 	}
 }
 
-class SampleModal extends Modal {
+class LoadRecipeModal extends Modal {
+	result: string;
+
 	constructor(app: App) {
 		super(app);
 	}
 
+	getHtml = async (url: string) => {
+		new Notice(`Fetching: ${url}`);
+
+		try {
+			const resp = await requestUrl({
+				url,
+				method: "GET",
+				headers: {
+					"Content-Type": "text/html",
+				},
+			});
+
+			return resp.text;
+		} catch (err) {
+			return err;
+		}
+	};
+
+	get$ = (html: string): CheerioAPI => {
+		return cheerio.load(html);
+	};
+
+	onSubmit = async (
+		result = "https://www.foodandwine.com/recipes/tomatillo-salsa-cruda"
+	) => {
+		const text = await this.getHtml(result);
+		const $ = this.get$(text);
+
+		$('script[type="application/ld+json"]').each((i, el) => {
+			const html = $(el).html();
+			if (!html) return;
+			const json = JSON.parse(html);
+			console.log(json);
+			// if (json?.["@type"]?.includes("Recipe") && json?.name) {
+			// 	console.log(json.name);
+			// } else {
+			// 	console.log("Not a recipe", json?.["@type"]);
+			// }
+		});
+	};
+
 	onOpen() {
 		const { contentEl } = this;
-		contentEl.setText("Woah!");
+
+		contentEl.createEl("h1", { text: "What's your name?" });
+
+		new Setting(contentEl).setName("Name").addText((text) =>
+			text.onChange((value) => {
+				this.result = value;
+			})
+		);
+
+		new Setting(contentEl).addButton((btn) =>
+			btn
+				.setButtonText("Submit")
+				.setCta()
+				.onClick(() => {
+					// this.close();
+					this.onSubmit(this.result);
+				})
+		);
 	}
 
 	onClose() {
