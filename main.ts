@@ -13,6 +13,8 @@ import * as c from "./constants";
 import * as cheerio from "cheerio";
 import * as settings from "./settings";
 import { CheerioAPI } from "cheerio";
+import { Recipe } from "schema-dts";
+import { type } from "os";
 
 export default class RecipeGrabber extends Plugin {
 	settings: settings.PluginSettings;
@@ -103,8 +105,21 @@ class LoadRecipeModal extends Modal {
 		return cheerio.load(html);
 	};
 
+	handleJSON = (json: Recipe) => {
+		const _type = json?.["@type"];
+		// some sites are using the wrong type, @type as an array
+		if (
+			(Array.isArray(_type) && !_type.includes("Recipe")) ||
+			(typeof _type === "string" && _type !== "Recipe")
+		) {
+			return;
+		}
+
+		console.log(json);
+	};
+
 	onSubmit = async (
-		result = "https://www.foodandwine.com/recipes/tomatillo-salsa-cruda"
+		result = "https://www.allrecipes.com/recipe/223042/chicken-parmesan/"
 	) => {
 		const text = await this.getHtml(result);
 		const $ = this.get$(text);
@@ -113,7 +128,11 @@ class LoadRecipeModal extends Modal {
 			const html = $(el).html();
 			if (!html) return;
 			const json = JSON.parse(html);
-			console.log(json);
+			if (Array.isArray(json)) {
+				json.forEach(this.handleJSON);
+			} else {
+				this.handleJSON(json);
+			}
 			// if (json?.["@type"]?.includes("Recipe") && json?.name) {
 			// 	console.log(json.name);
 			// } else {
