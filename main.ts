@@ -1,7 +1,10 @@
-import { Editor, MarkdownView, Plugin } from "obsidian";
+import { Editor, MarkdownView, Plugin, Notice, requestUrl } from "obsidian";
+import * as cheerio from "cheerio";
 import * as c from "./constants";
 import * as settings from "./settings";
+import { Recipe } from "schema-dts";
 import { LoadRecipeModal } from "./modal-load-recipe";
+import * as handlebars from "handlebars";
 
 export default class RecipeGrabber extends Plugin {
 	settings: settings.PluginSettings;
@@ -11,7 +14,7 @@ export default class RecipeGrabber extends Plugin {
 
 		// This creates an icon in the left ribbon.
 		this.addRibbonIcon("dice", c.PLUGIN_NAME, (evt: MouseEvent) => {
-			new LoadRecipeModal(this.app).open();
+			new LoadRecipeModal(this.app, this.getRecipes).open();
 		});
 
 		// This adds a simple command that can be triggered anywhere
@@ -19,7 +22,7 @@ export default class RecipeGrabber extends Plugin {
 			id: c.CMD_OPEN_MODAL,
 			name: "Grab Recipe",
 			callback: () => {
-				new LoadRecipeModal(this.app).open();
+				new LoadRecipeModal(this.app, this.getRecipes).open();
 			},
 		});
 
@@ -60,5 +63,59 @@ export default class RecipeGrabber extends Plugin {
 
 	async saveSettings() {
 		await this.saveData(this.settings);
+	}
+
+	getRecipes = async (url: string) => {
+		const markdown = handlebars.compile(c.DEFAULT_TEMPLATE(url));
+		const recipes = await this.fetchRecipes(url);
+		recipes.forEach((recipe) => {
+			console.log(markdown(recipe));
+		});
+	};
+
+	async fetchRecipes(
+		url = "https://cooking.nytimes.com/recipes/1013116-simple-barbecue-sauce"
+	): Promise<Recipe[]> {
+		new Notice(`Fetching: ${url}`);
+		let response;
+
+		try {
+			response = await requestUrl({
+				url,
+				method: "GET",
+				headers: {
+					"Content-Type": "text/html",
+				},
+			});
+		} catch (err) {
+			return err;
+		}
+
+		const $ = cheerio.load(response.text);
+
+		const recipes: Recipe[] = [];
+
+		$('script[type="application/ld+json"]').each((i, el) => {
+			const content = $(el).text();
+			if (!content) return;
+			const json = JSON.parse(content);
+
+			// make sure its a recipe, this could be in an array or not
+			const _type = json?.["@type"];
+			if (
+				(Array.isArray(_type) && !_type.includes("Recipe")) ||
+				(typeof _type === "string" && _type !== "Recipe")
+			) {
+				return;
+			}
+
+			if (Array.isArray(json)) {
+				recipes.push(...json);
+			} else {
+				recipes.push(json);
+			}
+		});
+
+		return recipes;
 	}
 }
