@@ -14,7 +14,7 @@ import * as cheerio from "cheerio";
 import * as settings from "./settings";
 import { CheerioAPI } from "cheerio";
 import { Recipe } from "schema-dts";
-import { type } from "os";
+import * as handlebars from "handlebars";
 
 export default class RecipeGrabber extends Plugin {
 	settings: settings.PluginSettings;
@@ -78,8 +78,36 @@ export default class RecipeGrabber extends Plugin {
 
 class LoadRecipeModal extends Modal {
 	result: string;
+	template = (url: string) => `
+		---
+		date: Apr 28th, 2023 @11:41am
+		tags: recipe 
+		created: {{datePublished}}
+		url: ${url} 
+		---
 
-	constructor(app: App) {
+		# {{name}}
+		{{description}}
+
+		{{#if image}}
+			![{{name}}]({{image.url}})
+		{{/if}}
+
+		## Ingredients
+		{{#each recipeIngredient}}
+			- {{this}}
+		{{/each}}
+
+		## Instructions
+		{{#each recipeInstructions}}
+			- {{this.text}}
+		{{/each}}
+
+
+		-----
+
+		## Notes
+	`;
 		super(app);
 	}
 
@@ -105,8 +133,8 @@ class LoadRecipeModal extends Modal {
 		return cheerio.load(html);
 	};
 
-	handleJSON = (json: Recipe) => {
-		const _type = json?.["@type"];
+	getMarkdown = (recipe: Recipe, url: string): string | undefined => {
+		const _type = recipe?.["@type"];
 		// some sites are using the wrong type, @type as an array
 		if (
 			(Array.isArray(_type) && !_type.includes("Recipe")) ||
@@ -115,29 +143,31 @@ class LoadRecipeModal extends Modal {
 			return;
 		}
 
-		console.log(json);
+		const html = handlebars.compile(this.template(url));
+		// execute the compiled template and print the output to the console
+		return html(recipe);
 	};
 
 	onSubmit = async (
 		result = "https://www.allrecipes.com/recipe/223042/chicken-parmesan/"
 	) => {
-		const text = await this.getHtml(result);
-		const $ = this.get$(text);
+		const html = await this.getHtml(result);
+		const $ = this.get$(html);
+
+		let markdown = "";
+		let recipe: Recipe;
 
 		$('script[type="application/ld+json"]').each((i, el) => {
 			const html = $(el).html();
 			if (!html) return;
-			const json = JSON.parse(html);
-			if (Array.isArray(json)) {
-				json.forEach(this.handleJSON);
+			recipe = JSON.parse(html);
+			if (Array.isArray(recipe)) {
+				recipe.forEach((j) =>
+					markdown.concat(this.getMarkdown(j, result) || "")
+				);
 			} else {
-				this.handleJSON(json);
+				markdown = this.getMarkdown(recipe, result) || "";
 			}
-			// if (json?.["@type"]?.includes("Recipe") && json?.name) {
-			// 	console.log(json.name);
-			// } else {
-			// 	console.log("Not a recipe", json?.["@type"]);
-			// }
 		});
 	};
 
