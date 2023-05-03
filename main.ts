@@ -59,6 +59,8 @@ export default class RecipeGrabber extends Plugin {
 			settings.DEFAULT_SETTINGS,
 			await this.loadData()
 		);
+
+		this.getRecipes("https://littlesunnykitchen.com/marry-me-chicken/");
 	}
 
 	async saveSettings() {
@@ -68,12 +70,20 @@ export default class RecipeGrabber extends Plugin {
 	getRecipes = async (url: string) => {
 		const markdown = handlebars.compile(c.DEFAULT_TEMPLATE);
 		const recipes = await this.fetchRecipes(url);
+		const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+		if (!view) return;
+		view.editor.setValue("");
+
 		recipes.forEach((recipe) => {
 			console.log(recipe);
 			console.log(markdown(recipe));
+			view.editor.replaceSelection(markdown(recipe));
 		});
 	};
 
+	/**
+	 * The main function to go get the recipe, and format it for the template
+	 */
 	async fetchRecipes(
 		url = "https://cooking.nytimes.com/recipes/1013116-simple-barbecue-sauce"
 	): Promise<Recipe[]> {
@@ -100,7 +110,6 @@ export default class RecipeGrabber extends Plugin {
 			const content = $(el).text();
 			if (!content) return;
 			let json = JSON.parse(content);
-
 			const _type = json?.["@type"];
 
 			// there is a chance that the recipe is in a graph

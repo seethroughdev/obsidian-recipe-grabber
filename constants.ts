@@ -15,22 +15,27 @@ author: {{author.name}}
 url: {{url}} 
 ---
 
-# {{name}}
+# [{{name}}]({{url}})
+
 {{description}}
 
 {{#if image.url}}
-	![{{name}}]({{image.url}})
-	{{else}}
-	![{{name}}]({{image}})
+![{{name}}]({{image.url}})
+{{else if image.[0]}}
+![{{name}}]({{image.[0]}})
+{{else}}
+![{{name}}]({{image}})
 {{/if}}
 
 
-## Ingredients
+### Ingredients
+
 {{#each recipeIngredient}}
 	- {{this}}
 {{/each}}
 
-## Instructions
+### Instructions
+
 {{#each recipeInstructions}}
 	- {{this.text}}
 {{/each}}
