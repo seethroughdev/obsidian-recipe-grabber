@@ -12,13 +12,15 @@ export class LoadRecipeModal extends Modal {
 	onOpen() {
 		const { contentEl } = this;
 
-		contentEl.createEl("h1", { text: "What's your name?" });
+		contentEl.createEl("p", { text: "Paste the url of your recipe" });
 
-		new Setting(contentEl).setName("Name").addText((text) =>
+		new Setting(contentEl).setName("url: ").addText((text) => {
+			text.setPlaceholder("https://www.example.com/recipe");
 			text.onChange((value) => {
 				this.result = value;
-			})
-		);
+			});
+			text.inputEl.style.width = "100%";
+		});
 
 		new Setting(contentEl).addButton((btn) =>
 			btn

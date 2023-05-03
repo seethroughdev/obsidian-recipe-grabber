@@ -1,4 +1,4 @@
-import { Editor, MarkdownView, Plugin, Notice, requestUrl } from "obsidian";
+import { MarkdownView, Plugin, Notice, requestUrl } from "obsidian";
 import * as cheerio from "cheerio";
 import * as c from "./constants";
 import * as settings from "./settings";
@@ -13,8 +13,18 @@ export default class RecipeGrabber extends Plugin {
 		await this.loadSettings();
 
 		// This creates an icon in the left ribbon.
-		this.addRibbonIcon("dice", c.PLUGIN_NAME, (evt: MouseEvent) => {
-			new LoadRecipeModal(this.app, this.getRecipes).open();
+		this.addRibbonIcon("chef-hat", c.PLUGIN_NAME, (evt: MouseEvent) => {
+			const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+			const selection = view?.editor.getSelection()?.trim();
+			// try and make sure its a url
+			if (
+				selection?.startsWith("http") &&
+				selection.split(" ").length === 1
+			) {
+				this.getRecipes(selection);
+			} else {
+				new LoadRecipeModal(this.app, this.getRecipes).open();
+			}
 		});
 
 		// This adds a simple command that can be triggered anywhere
@@ -39,9 +49,9 @@ export default class RecipeGrabber extends Plugin {
 			await this.loadData()
 		);
 
-		this.getRecipes(
-			"https://sallysbakingaddiction.com/maryland-crab-cakes/"
-		);
+		// this.getRecipes(
+		// 	"https://sallysbakingaddiction.com/maryland-crab-cakes/"
+		// );
 	}
 
 	async saveSettings() {
