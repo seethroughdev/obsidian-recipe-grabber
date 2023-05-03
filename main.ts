@@ -66,9 +66,10 @@ export default class RecipeGrabber extends Plugin {
 	}
 
 	getRecipes = async (url: string) => {
-		const markdown = handlebars.compile(c.DEFAULT_TEMPLATE(url));
+		const markdown = handlebars.compile(c.DEFAULT_TEMPLATE);
 		const recipes = await this.fetchRecipes(url);
 		recipes.forEach((recipe) => {
+			console.log(recipe);
 			console.log(markdown(recipe));
 		});
 	};
@@ -98,16 +99,28 @@ export default class RecipeGrabber extends Plugin {
 		$('script[type="application/ld+json"]').each((i, el) => {
 			const content = $(el).text();
 			if (!content) return;
-			const json = JSON.parse(content);
+			let json = JSON.parse(content);
+
+			const _type = json?.["@type"];
+
+			// there is a chance that the recipe is in a graph
+			if (!_type && json?.["@graph"]) {
+				json["@graph"].find((graph: Recipe) => {
+					if (graph["@type"] === "Recipe") {
+						json = graph;
+					}
+				});
+			}
 
 			// make sure its a recipe, this could be in an array or not
-			const _type = json?.["@type"];
 			if (
 				(Array.isArray(_type) && !_type.includes("Recipe")) ||
 				(typeof _type === "string" && _type !== "Recipe")
 			) {
 				return;
 			}
+
+			json.url = url;
 
 			if (Array.isArray(json)) {
 				recipes.push(...json);

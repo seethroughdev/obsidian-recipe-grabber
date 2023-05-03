@@ -7,20 +7,23 @@ export const CMD_INSERT_RECIPE = "cmd-insert-recipe";
 
 /* ---------------------------- DEFAULT TEMPLATE ---------------------------- */
 
-export const DEFAULT_TEMPLATE = (url?: string) => `
+export const DEFAULT_TEMPLATE = `
 ---
-date: Apr 28th, 2023 @11:41am
 tags: recipe 
 created: {{datePublished}}
-url: ${url} 
+author: {{author.name}}
+url: {{url}} 
 ---
 
 # {{name}}
 {{description}}
 
-{{#if image}}
+{{#if image.url}}
 	![{{name}}]({{image.url}})
+	{{else}}
+	![{{name}}]({{image}})
 {{/if}}
+
 
 ## Ingredients
 {{#each recipeIngredient}}
