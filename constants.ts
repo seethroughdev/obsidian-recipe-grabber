@@ -30,14 +30,18 @@ url: {{url}}
 
 ### Ingredients
 
+{{#if recipeIngredient.[0]}}
 {{#each recipeIngredient}}
-	- {{this}}
+- {{this}}
 {{/each}}
+{{else}}
+{{recipeIngredient}}
+{{/if}}
 
 ### Instructions
 
 {{#each recipeInstructions}}
-	- {{this.text}}
+- {{this.text}}
 {{/each}}
 
 
