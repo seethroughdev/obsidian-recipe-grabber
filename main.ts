@@ -67,8 +67,10 @@ export default class RecipeGrabber extends Plugin {
 			view.editor.setValue("");
 
 			recipes.forEach((recipe) => {
-				console.log(recipe);
-				console.log(markdown(recipe));
+				if (this.settings.debug) {
+					console.log(recipe);
+					console.log(markdown(recipe));
+				}
 				view.editor.replaceSelection(markdown(recipe));
 			});
 		} catch (error) {

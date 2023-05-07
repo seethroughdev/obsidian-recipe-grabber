@@ -24,10 +24,10 @@ export class LoadRecipeModal extends Modal {
 
 		new Setting(contentEl).addButton((btn) =>
 			btn
-				.setButtonText("Submit")
+				.setButtonText("Get Recipe")
 				.setCta()
 				.onClick(() => {
-					// this.close();
+					this.close();
 					this.onSubmit(this.result);
 				})
 		);
