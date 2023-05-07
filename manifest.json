@@ -3,8 +3,8 @@
 	"name": "Recipe Grabber",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "This is a sample plugin for Obsidian. This plugin demonstrates some of the capabilities of the Obsidian API.",
-	"author": "Obsidian",
+	"description": "This plugin allows you to quickly grab the contents of an online recipe, and preserve a url when you want to go back to the original source.",
+	"author": "seethroughdev",
 	"authorUrl": "https://obsidian.md",
 	"fundingUrl": "https://obsidian.md/pricing",
 	"isDesktopOnly": false
