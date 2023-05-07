@@ -97,23 +97,12 @@ export default class RecipeGrabber extends Plugin {
 
 		const recipes: Recipe[] = [];
 
-		$('script[type="application/ld+json"]').each((i, el) => {
-			const content = $(el).text();
-			if (!content) return;
-			let json = JSON.parse(content);
+		function handleSchemas(json: Recipe): void {
 			const _type = json?.["@type"];
-
-			// there is a chance that the recipe is in a graph
-			if (!_type && json?.["@graph"]) {
-				json["@graph"].find((graph: Recipe) => {
-					if (graph["@type"] === "Recipe") {
-						json = graph;
-					}
-				});
-			}
 
 			// make sure its a recipe, this could be in an array or not
 			if (
+				!_type ||
 				(Array.isArray(_type) && !_type.includes("Recipe")) ||
 				(typeof _type === "string" && _type !== "Recipe")
 			) {
@@ -121,11 +110,25 @@ export default class RecipeGrabber extends Plugin {
 			}
 
 			json.url = url;
+			recipes.push(json);
+		}
+
+		$('script[type="application/ld+json"]').each((i, el) => {
+			const content = $(el).text()?.trim();
+			const json = JSON.parse(content);
 
 			if (Array.isArray(json)) {
-				recipes.push(...json);
+				json.forEach((j) => {
+					if (!j?.["@type"] && j?.["@graph"]) {
+						j["@graph"].forEach((graph: Recipe) =>
+							handleSchemas(graph)
+						);
+					} else {
+						handleSchemas(j);
+					}
+				});
 			} else {
-				recipes.push(json);
+				handleSchemas(json);
 			}
 		});
 
