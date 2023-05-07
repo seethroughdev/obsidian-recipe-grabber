@@ -58,19 +58,36 @@ export default class RecipeGrabber extends Plugin {
 		await this.saveData(this.settings);
 	}
 
-	getRecipes = async (url: string) => {
+	getRecipes = async (url: string): Promise<void> => {
 		const markdown = handlebars.compile(c.DEFAULT_TEMPLATE);
-		const recipes = await this.fetchRecipes(url);
-		const view = this.app.workspace.getActiveViewOfType(MarkdownView);
-		if (!view) return;
-		view.editor.setValue("");
+		try {
+			const recipes = await this.fetchRecipes(url);
+			const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+			if (!view) return;
+			view.editor.setValue("");
 
-		recipes.forEach((recipe) => {
-			console.log(recipe);
-			console.log(markdown(recipe));
-			view.editor.replaceSelection(markdown(recipe));
-		});
+			recipes.forEach((recipe) => {
+				console.log(recipe);
+				console.log(markdown(recipe));
+				view.editor.replaceSelection(markdown(recipe));
+			});
+		} catch (error) {
+			return;
+		}
 	};
+
+	private isUrl(str: string): boolean {
+		try {
+			const newUrl = new URL(str);
+			if (newUrl.protocol === "http:" || newUrl.protocol === "https:") {
+				return true;
+			}
+		} catch (err) {
+			return false;
+		}
+
+		return false;
+	}
 
 	/**
 	 * The main function to go get the recipe, and format it for the template
@@ -78,6 +95,10 @@ export default class RecipeGrabber extends Plugin {
 	async fetchRecipes(
 		url = "https://cooking.nytimes.com/recipes/1013116-simple-barbecue-sauce"
 	): Promise<Recipe[]> {
+		if (!this.isUrl(url)) {
+			return Promise.reject("Not a valid url");
+		}
+
 		new Notice(`Fetching: ${url}`);
 		let response;
 
@@ -90,7 +111,7 @@ export default class RecipeGrabber extends Plugin {
 				},
 			});
 		} catch (err) {
-			return err;
+			return Promise.reject("Not a valid url");
 		}
 
 		const $ = cheerio.load(response.text);
