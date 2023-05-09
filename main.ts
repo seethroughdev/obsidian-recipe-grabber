@@ -78,35 +78,24 @@ export default class RecipeGrabber extends Plugin {
 		}
 	};
 
-	private isUrl(str: string): boolean {
-		try {
-			const newUrl = new URL(str);
-			if (newUrl.protocol === "http:" || newUrl.protocol === "https:") {
-				return true;
-			}
-		} catch (err) {
-			return false;
-		}
-
-		return false;
-	}
-
 	/**
 	 * The main function to go get the recipe, and format it for the template
 	 */
 	async fetchRecipes(
-		url = "https://cooking.nytimes.com/recipes/1013116-simple-barbecue-sauce"
+		_url = "https://cooking.nytimes.com/recipes/1013116-simple-barbecue-sauce"
 	): Promise<Recipe[]> {
-		if (!this.isUrl(url)) {
+		const url = new URL(_url);
+
+		if (url.protocol !== "http:" && url.protocol !== "https:") {
 			return Promise.reject("Not a valid url");
 		}
 
-		new Notice(`Fetching: ${url}`);
+		new Notice(`Fetching: ${url.href}`);
 		let response;
 
 		try {
 			response = await requestUrl({
-				url,
+				url: url.href,
 				method: "GET",
 				headers: {
 					"Content-Type": "text/html",
@@ -132,7 +121,7 @@ export default class RecipeGrabber extends Plugin {
 				return;
 			}
 
-			json.url = url;
+			json.url = url.href;
 			recipes.push(json);
 		}
 
