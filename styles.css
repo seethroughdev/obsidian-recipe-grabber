@@ -6,3 +6,46 @@ available in the app when your plugin is enabled.
 If your plugin does not need CSS, delete this file.
 
 */
+
+/**
+	We need to add some custom styling for the settings tab because we want our textarea to fill the avaialble space.
+*/
+.settingsTemplateRow {
+	display: flex;
+	justify-content: start;
+	flex-direction: column;
+	align-items: flex-start;
+	position: relative;
+}
+
+.settingsTemplateRow .setting-item-control {
+	width: 100%;
+	margin: 1rem 0 0;
+	flex: 1 auto;
+}
+
+.settingsTemplateRow .setting-item-info {
+	flex: 0 1 auto;
+}
+
+.settingsTemplateRow textarea {
+	width: 100%;
+	height: 100%;
+}
+
+.settingsTemplate {
+	display: flex;
+	justify-content: start;
+	flex-direction: column;
+}
+
+.settingsTemplate .settingsTemplateRow {
+	flex: 1 auto;
+}
+
+.settingsTemplateRow .settingsTemplateButton {
+	position: absolute;
+	top: 1rem;
+	right: 0;
+	cursor: pointer;
+}

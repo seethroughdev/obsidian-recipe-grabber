@@ -59,7 +59,7 @@ export default class RecipeGrabber extends Plugin {
 	}
 
 	getRecipes = async (url: string): Promise<void> => {
-		const markdown = handlebars.compile(c.DEFAULT_TEMPLATE);
+		const markdown = handlebars.compile(this.settings.recipeTemplate);
 		try {
 			const recipes = await this.fetchRecipes(url);
 			const view = this.app.workspace.getActiveViewOfType(MarkdownView);
