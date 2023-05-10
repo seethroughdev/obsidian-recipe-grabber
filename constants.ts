@@ -23,6 +23,8 @@ url: {{url}}
 ![{{name}}]({{image.[0].url}})
 {{else if image.url}}
 ![{{name}}]({{image.url}})
+{{else if image.[0]}}
+![{{name}}]({{image.[0]}})
 {{else}}
 ![{{name}}]({{image}})
 {{/if}}

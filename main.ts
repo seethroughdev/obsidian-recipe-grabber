@@ -50,7 +50,7 @@ export default class RecipeGrabber extends Plugin {
 		);
 
 		// this.getRecipes(
-		// 	"https://sallysbakingaddiction.com/maryland-crab-cakes/"
+		// 	"https://cooking.nytimes.com/recipes/1016919-grilled-or-oven-roasted-santa-maria-tri-tip"
 		// );
 	}
 
