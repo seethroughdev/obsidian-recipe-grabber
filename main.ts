@@ -132,13 +132,19 @@ export default class RecipeGrabber extends Plugin {
 			if (Array.isArray(json)) {
 				json.forEach((j) => {
 					if (!j?.["@type"] && j?.["@graph"]) {
-						j["@graph"].forEach((graph: Recipe) =>
-							handleSchemas(graph)
+						const r = j["@graph"].find(
+							(j: Recipe) => j["@type"] === "Recipe"
 						);
+						handleSchemas(r);
 					} else {
 						handleSchemas(j);
 					}
 				});
+			} else if (!json?.["@type"] && json?.["@graph"]) {
+				const r = json["@graph"].find(
+					(j: Recipe) => j["@type"] === "Recipe"
+				);
+				handleSchemas(r);
 			} else {
 				handleSchemas(json);
 			}
