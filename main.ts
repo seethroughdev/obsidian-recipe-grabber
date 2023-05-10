@@ -2,7 +2,7 @@ import { MarkdownView, Plugin, Notice, requestUrl } from "obsidian";
 import * as cheerio from "cheerio";
 import * as c from "./constants";
 import * as settings from "./settings";
-import { Recipe } from "schema-dts";
+import { Recipe, Graph, WithContext, Thing, RecipeLeaf } from "schema-dts";
 import { LoadRecipeModal } from "./modal-load-recipe";
 import * as handlebars from "handlebars";
 
@@ -109,7 +109,7 @@ export default class RecipeGrabber extends Plugin {
 
 		const recipes: Recipe[] = [];
 
-		function handleSchemas(json: Recipe): void {
+		function handleSchema(json: Recipe): void {
 			const _type = json?.["@type"];
 
 			// make sure its a recipe, this could be in an array or not
@@ -125,29 +125,33 @@ export default class RecipeGrabber extends Plugin {
 			recipes.push(json);
 		}
 
+		/**
+		 * Unfortunately, I've found schemas that are arrays, some not. Some in @graph, some not.
+		 * Here we attempt to move all kinds into a single array of RecipeLeafs
+		 */
+		function normalizeSchemas(schemas: RecipeLeaf[]): void {
+			schemas.forEach((schema) => {
+				if (Array.isArray(schema?.["@graph"])) {
+					return normalizeSchemas(schema["@graph"]);
+				}
+
+				const _type = schema?.["@type"];
+
+				if (
+					Array.isArray(_type)
+						? _type.includes("Recipe")
+						: schema?.["@type"] === "Recipe"
+				) {
+					handleSchema(schema);
+				}
+			});
+		}
+
 		$('script[type="application/ld+json"]').each((i, el) => {
 			const content = $(el).text()?.trim();
 			const json = JSON.parse(content);
-
-			if (Array.isArray(json)) {
-				json.forEach((j) => {
-					if (!j?.["@type"] && j?.["@graph"]) {
-						const r = j["@graph"].find(
-							(j: Recipe) => j["@type"] === "Recipe"
-						);
-						handleSchemas(r);
-					} else {
-						handleSchemas(j);
-					}
-				});
-			} else if (!json?.["@type"] && json?.["@graph"]) {
-				const r = json["@graph"].find(
-					(j: Recipe) => j["@type"] === "Recipe"
-				);
-				handleSchemas(r);
-			} else {
-				handleSchemas(json);
-			}
+			const data = Array.isArray(json) ? json : [json];
+			normalizeSchemas(data);
 		});
 
 		return recipes;
