@@ -2,7 +2,7 @@ import { MarkdownView, Plugin, Notice, requestUrl } from "obsidian";
 import * as cheerio from "cheerio";
 import * as c from "./constants";
 import * as settings from "./settings";
-import { Recipe, Graph, WithContext, Thing, RecipeLeaf } from "schema-dts";
+import { Recipe } from "schema-dts";
 import { LoadRecipeModal } from "./modal-load-recipe";
 import * as handlebars from "handlebars";
 
@@ -21,9 +21,9 @@ export default class RecipeGrabber extends Plugin {
 				selection?.startsWith("http") &&
 				selection.split(" ").length === 1
 			) {
-				this.getRecipes(selection);
+				this.addRecipeToMarkdown(selection);
 			} else {
-				new LoadRecipeModal(this.app, this.getRecipes).open();
+				new LoadRecipeModal(this.app, this.addRecipeToMarkdown).open();
 			}
 		});
 
@@ -32,7 +32,7 @@ export default class RecipeGrabber extends Plugin {
 			id: c.CMD_OPEN_MODAL,
 			name: "Grab Recipe",
 			callback: () => {
-				new LoadRecipeModal(this.app, this.getRecipes).open();
+				new LoadRecipeModal(this.app, this.addRecipeToMarkdown).open();
 			},
 		});
 
@@ -58,7 +58,39 @@ export default class RecipeGrabber extends Plugin {
 		await this.saveData(this.settings);
 	}
 
-	getRecipes = async (url: string): Promise<void> => {
+	/**
+	 * In order to make templating easier. Lets try and normalize the types of recipe images
+	 * to a single string url
+	 */
+	private normalizeImages(recipe: Recipe): Recipe {
+		if (typeof recipe.image === "string") {
+			return recipe;
+		}
+
+		if (Array.isArray(recipe.image)) {
+			const image = recipe.image?.[0];
+			if (typeof image === "string") {
+				recipe.image = image;
+				return recipe;
+			}
+			if (image?.url) {
+				recipe.image = image.url;
+				return recipe;
+			}
+		}
+
+		console.log(recipe.image);
+		/**
+		 * Although the spec does not show ImageObject as a top level option, it is used in some big sites.
+		 */
+		if ((recipe as any).image?.url) {
+			recipe.image = (recipe as any)?.image?.url || "";
+		}
+
+		return recipe;
+	}
+
+	private addRecipeToMarkdown = async (url: string): Promise<void> => {
 		const markdown = handlebars.compile(this.settings.recipeTemplate);
 		try {
 			const recipes = await this.fetchRecipes(url);
@@ -107,42 +139,45 @@ export default class RecipeGrabber extends Plugin {
 
 		const $ = cheerio.load(response.text);
 
+		/**
+		 * the main recipes list, we'll use to render from
+		 * its an array instead because a page can technically have multiple recipes on it
+		 */
 		const recipes: Recipe[] = [];
 
-		function handleSchema(json: Recipe): void {
-			const _type = json?.["@type"];
+		/**
+		 * Some details are in varying formats, for templating to be easier,
+		 * lets attempt to normalize them
+		 */
+		const normalizeSchema = (json: Recipe): void => {
+			json.url = url.href;
+			json = this.normalizeImages(json);
 
-			// make sure its a recipe, this could be in an array or not
-			if (
-				!_type ||
-				(Array.isArray(_type) && !_type.includes("Recipe")) ||
-				(typeof _type === "string" && _type !== "Recipe")
-			) {
-				return;
+			if (typeof json.recipeIngredient === "string") {
+				json.recipeIngredient = [json.recipeIngredient];
 			}
 
-			json.url = url.href;
 			recipes.push(json);
-		}
+		};
 
 		/**
 		 * Unfortunately, I've found schemas that are arrays, some not. Some in @graph, some not.
 		 * Here we attempt to move all kinds into a single array of RecipeLeafs
 		 */
-		function normalizeSchemas(schemas: RecipeLeaf[]): void {
+		function handleSchemas(schemas: any[]): void {
 			schemas.forEach((schema) => {
-				if (Array.isArray(schema?.["@graph"])) {
-					return normalizeSchemas(schema["@graph"]);
-				}
+				if ("@graph" in schema && Array.isArray(schema?.["@graph"])) {
+					return handleSchemas(schema["@graph"]);
+				} else {
+					const _type = schema?.["@type"];
 
-				const _type = schema?.["@type"];
-
-				if (
-					Array.isArray(_type)
-						? _type.includes("Recipe")
-						: schema?.["@type"] === "Recipe"
-				) {
-					handleSchema(schema);
+					if (
+						Array.isArray(_type)
+							? _type.includes("Recipe")
+							: schema?.["@type"] === "Recipe"
+					) {
+						normalizeSchema(schema);
+					}
 				}
 			});
 		}
@@ -151,7 +186,7 @@ export default class RecipeGrabber extends Plugin {
 			const content = $(el).text()?.trim();
 			const json = JSON.parse(content);
 			const data = Array.isArray(json) ? json : [json];
-			normalizeSchemas(data);
+			handleSchemas(data);
 		});
 
 		return recipes;
