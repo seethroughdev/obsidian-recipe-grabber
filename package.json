@@ -1,7 +1,7 @@
 {
 	"name": "obsidian-recipe-grabber",
-	"version": "1.0.0",
-	"description": "This is a sample plugin for Obsidian (https://obsidian.md)",
+	"version": "0.9.0",
+	"description": "This plugin allows you to quickly grab the contents of an online recipe. Customize the output. And preserve the metadata for when you want to go back to the source.",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
