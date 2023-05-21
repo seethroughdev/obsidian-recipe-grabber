@@ -1,10 +1,18 @@
+/**
+ * This is the main file for the recipe-grabber plugin. The summary is:
+ * - fetch a recipe from a url
+ * - if the recipe is valid, try and normalize it into a simple templatable format
+ * - render the recipe into a markdown template
+ * - add the recipe to the markdown editor
+ */
+
 import { MarkdownView, Plugin, Notice, requestUrl } from "obsidian";
+import * as handlebars from "handlebars";
+import type { Recipe } from "schema-dts";
 import * as cheerio from "cheerio";
 import * as c from "./constants";
 import * as settings from "./settings";
-import { Recipe } from "schema-dts";
 import { LoadRecipeModal } from "./modal-load-recipe";
-import * as handlebars from "handlebars";
 
 export default class RecipeGrabber extends Plugin {
 	settings: settings.PluginSettings;
@@ -59,63 +67,9 @@ export default class RecipeGrabber extends Plugin {
 	}
 
 	/**
-	 * In order to make templating easier. Lets try and normalize the types of recipe images
-	 * to a single string url
-	 */
-	private normalizeImages(recipe: Recipe): Recipe {
-		if (typeof recipe.image === "string") {
-			return recipe;
-		}
-
-		if (Array.isArray(recipe.image)) {
-			const image = recipe.image?.[0];
-			if (typeof image === "string") {
-				recipe.image = image;
-				return recipe;
-			}
-			if (image?.url) {
-				recipe.image = image.url;
-				return recipe;
-			}
-		}
-
-		console.log(recipe.image);
-		/**
-		 * Although the spec does not show ImageObject as a top level option, it is used in some big sites.
-		 */
-		if ((recipe as any).image?.url) {
-			recipe.image = (recipe as any)?.image?.url || "";
-		}
-
-		return recipe;
-	}
-
-	private addRecipeToMarkdown = async (url: string): Promise<void> => {
-		const markdown = handlebars.compile(this.settings.recipeTemplate);
-		try {
-			const recipes = await this.fetchRecipes(url);
-			const view = this.app.workspace.getActiveViewOfType(MarkdownView);
-			if (!view) return;
-			view.editor.setValue("");
-
-			recipes.forEach((recipe) => {
-				if (this.settings.debug) {
-					console.log(recipe);
-					console.log(markdown(recipe));
-				}
-				view.editor.replaceSelection(markdown(recipe));
-			});
-		} catch (error) {
-			return;
-		}
-	};
-
-	/**
 	 * The main function to go get the recipe, and format it for the template
 	 */
-	async fetchRecipes(
-		_url = "https://cooking.nytimes.com/recipes/1013116-simple-barbecue-sauce"
-	): Promise<Recipe[]> {
+	async fetchRecipes(_url: string): Promise<Recipe[]> {
 		const url = new URL(_url);
 
 		if (url.protocol !== "http:" && url.protocol !== "https:") {
@@ -161,7 +115,7 @@ export default class RecipeGrabber extends Plugin {
 		};
 
 		/**
-		 * Unfortunately, I've found schemas that are arrays, some not. Some in @graph, some not.
+		 * Unfortunately, some schemas are arrays, some not. Some in @graph, some not.
 		 * Here we attempt to move all kinds into a single array of RecipeLeafs
 		 */
 		function handleSchemas(schemas: any[]): void {
@@ -182,13 +136,83 @@ export default class RecipeGrabber extends Plugin {
 			});
 		}
 
+		// parse the dom of the page and look for any schema.org/Recipe
 		$('script[type="application/ld+json"]').each((i, el) => {
 			const content = $(el).text()?.trim();
 			const json = JSON.parse(content);
+
+			// to make things consistent, we'll put all recipes into an array
 			const data = Array.isArray(json) ? json : [json];
 			handleSchemas(data);
 		});
 
 		return recipes;
+	}
+
+	/**
+	 * This function handles all the templating of the recipes
+	 */
+	private addRecipeToMarkdown = async (url: string): Promise<void> => {
+		const markdown = handlebars.compile(this.settings.recipeTemplate);
+		try {
+			const recipes = await this.fetchRecipes(url);
+			const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+			if (!view) return;
+
+			// in debug, clear editor first
+			if (this.settings.debug) {
+				view.editor.setValue("");
+			}
+
+			// too often, the recipe isn't there or malformed, lets let the user know.
+			if (recipes?.length === 0) {
+				new Notice(
+					"A validated recipe scheme was not found on this page, sorry!\n\nIf you think this is an error, please open an issue on github."
+				);
+				return;
+			}
+
+			// pages can have multiple recipes, lets add them all
+			recipes.forEach((recipe) => {
+				if (this.settings.debug) {
+					console.log(recipe);
+					console.log(markdown(recipe));
+				}
+				view.editor.replaceSelection(markdown(recipe));
+			});
+		} catch (error) {
+			return;
+		}
+	};
+
+	/**
+	 * In order to make templating easier. Lets normalize the types of recipe images
+	 * to a single string url
+	 */
+	private normalizeImages(recipe: Recipe): Recipe {
+		if (typeof recipe.image === "string") {
+			return recipe;
+		}
+
+		if (Array.isArray(recipe.image)) {
+			const image = recipe.image?.[0];
+			if (typeof image === "string") {
+				recipe.image = image;
+				return recipe;
+			}
+			if (image?.url) {
+				recipe.image = image.url;
+				return recipe;
+			}
+		}
+
+		/**
+		 * Although the spec does not show ImageObject as a top level option, it is used in some big sites.
+		 */
+		if ((recipe as any).image?.url) {
+			recipe.image = (recipe as any)?.image?.url || "";
+		}
+
+		return recipe;
 	}
 }

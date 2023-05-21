@@ -1,10 +1,8 @@
-For those of you who don't want to read the complete history of biscuits and how much the author loves making them on their family trip to Maine.
-
 This plugin allows you to paste the url of any recipe into your Obsidian page and get the contents in a concise recipe format along with the image and link back to the original page.
 
+Its built for those of you who want to save the recipe, and not the complete history of biscuits and how much the author loves making them on their family trip to Maine.
 
 https://github.com/seethroughdev/obsidian-recipe-grabber/assets/203779/ee5b70d1-8a26-4539-b969-29d5606d4e01
-
 
 ---
 
