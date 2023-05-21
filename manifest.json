@@ -1,7 +1,7 @@
 {
-	"id": "obsidian-recipe-grabber",
+	"id": "recipe-grabber",
 	"name": "Recipe Grabber",
-	"version": "0.9.0",
+	"version": "0.9.1",
 	"minAppVersion": "0.15.0",
 	"description": "This plugin allows you to quickly grab the contents of an online recipe. Customize the output. And preserve the metadata for when you want to go back to the source.",
 	"author": "seethroughdev",
