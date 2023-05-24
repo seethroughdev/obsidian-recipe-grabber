@@ -21,25 +21,33 @@ export default class RecipeGrabber extends Plugin {
 		await this.loadSettings();
 
 		// This creates an icon in the left ribbon.
-		this.addRibbonIcon("chef-hat", c.PLUGIN_NAME, (evt: MouseEvent) => {
-			const view = this.app.workspace.getActiveViewOfType(MarkdownView);
-			const selection = view?.editor.getSelection()?.trim();
-			// try and make sure its a url
-			if (
-				selection?.startsWith("http") &&
-				selection.split(" ").length === 1
-			) {
-				this.addRecipeToMarkdown(selection);
-			} else {
-				new LoadRecipeModal(this.app, this.addRecipeToMarkdown).open();
+		this.addRibbonIcon(
+			"chef-hat",
+			this.manifest.name,
+			(evt: MouseEvent) => {
+				const view =
+					this.app.workspace.getActiveViewOfType(MarkdownView);
+				const selection = view?.editor.getSelection()?.trim();
+				// try and make sure its a url
+				if (
+					selection?.startsWith("http") &&
+					selection.split(" ").length === 1
+				) {
+					this.addRecipeToMarkdown(selection);
+				} else {
+					new LoadRecipeModal(
+						this.app,
+						this.addRecipeToMarkdown
+					).open();
+				}
 			}
-		});
+		);
 
 		// This adds a simple command that can be triggered anywhere
 		this.addCommand({
 			id: c.CMD_OPEN_MODAL,
 			name: "Grab Recipe",
-			callback: () => {
+			editorCallback: () => {
 				new LoadRecipeModal(this.app, this.addRecipeToMarkdown).open();
 			},
 		});

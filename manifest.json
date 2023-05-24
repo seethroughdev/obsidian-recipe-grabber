@@ -1,9 +1,9 @@
 {
 	"id": "recipe-grabber",
 	"name": "Recipe Grabber",
-	"version": "0.9.2",
+	"version": "0.10.0",
 	"minAppVersion": "0.15.0",
-	"description": "This plugin allows you to quickly grab the contents of an online recipe. Customize the output. And preserve the metadata for when you want to go back to the source.",
+	"description": "Quickly grab the important contents of any online recipe.",
 	"author": "seethroughdev",
 	"authorUrl": "https://github.com/seethroughdev",
 	"isDesktopOnly": false
