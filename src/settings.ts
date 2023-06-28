@@ -23,7 +23,6 @@ export class SettingsTab extends PluginSettingTab {
 	display(): void {
 		const { containerEl } = this;
 		containerEl.empty();
-		containerEl.createEl("h2", { text: "The Recipe Grabber: Settings" });
 		containerEl.addClass("settingsTemplate");
 
 		new Setting(containerEl)
@@ -33,7 +32,6 @@ export class SettingsTab extends PluginSettingTab {
 				toggle
 					.setValue(this.plugin.settings.debug)
 					.onChange(async (value) => {
-						console.log("Debug mode: " + value);
 						this.plugin.settings.debug = value;
 						await this.plugin.saveSettings();
 					});
@@ -60,7 +58,6 @@ export class SettingsTab extends PluginSettingTab {
 			.addTextArea((text) => {
 				text.setValue(this.plugin.settings.recipeTemplate).onChange(
 					async (value) => {
-						console.log("Recipe template: " + value);
 						this.plugin.settings.recipeTemplate = value;
 						await this.plugin.saveSettings();
 					}
