@@ -2,7 +2,8 @@ This plugin allows you to paste the url of any recipe into your Obsidian page an
 
 Its built for those of you who want to save the recipe, and not the complete history of biscuits and how much the author loves making them on their family trip to Maine.
 
-https://github.com/seethroughdev/obsidian-recipe-grabber/assets/203779/ee5b70d1-8a26-4539-b969-29d5606d4e01
+https://github.com/seethroughdev/obsidian-recipe-grabber/assets/203779/88e3977c-fbb8-4bc6-a770-06071af154d1
+
 
 ---
 
