@@ -6,6 +6,10 @@ https://github.com/seethroughdev/obsidian-recipe-grabber/assets/203779/88e3977c-
 
 
 ---
+### Frontmatter Issues
+[Obsidian 1.4.6](https://obsidian.md/changelog/2023-08-31-desktop-v1.4.6/) changed the frontmatter behaviour.
+The frontmatter has to start on the first line of the file now. If you have leading newlines in your recipe template, the resulting frontmatter won't be properly parsed by obsidian.
+If you have this problem, go to the settings of this plugin and remove the leading newlines.
 
 ### Custom templating
 
