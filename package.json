@@ -1,6 +1,6 @@
 {
 	"name": "recipe-grabber",
-	"version": "0.14.0",
+	"version": "0.15.0",
 	"description": "Quickly grab the important contents of any online recipe.",
 	"main": "main.js",
 	"repository": {
