@@ -164,8 +164,32 @@ export default class RecipeGrabber extends Plugin {
 		const markdown = handlebars.compile(this.settings.recipeTemplate);
 		try {
 			const recipes = await this.fetchRecipes(url);
-			const view = this.app.workspace.getActiveViewOfType(MarkdownView);
-			if (!view) return;
+			let view = this.app.workspace.getActiveViewOfType(MarkdownView);
+
+			// if there isn't a current file open, lets create a file and open it
+			if (!view) {
+				const vault = this.app.vault;
+
+				// try and get recipe title
+				const filename =
+					recipes?.length > 0 && recipes?.[0]?.name
+						? recipes[0].name
+						: new Date().getTime(); // Generate a unique timestamp
+
+				const path = `${filename}.md`; // File path with timestamp and .md extension
+
+				// Create a new untitled file with empty content
+				await vault.create(path, "");
+
+				// Open the newly created file
+				await this.app.workspace.openLinkText(path, "", true);
+				view = this.app.workspace.getActiveViewOfType(MarkdownView);
+			}
+
+			if (!view) {
+				new Notice("Could not open a markdown view");
+				return;
+			}
 
 			// in debug, clear editor first
 			if (this.settings.debug) {
@@ -186,7 +210,16 @@ export default class RecipeGrabber extends Plugin {
 					console.log(recipe);
 					console.log(markdown(recipe));
 				}
-				view.editor.replaceSelection(markdown(recipe));
+
+				// notice instead of just passing the recipe into markdown, we are
+				// adding a key called 'json'. This is so we can see the raw json in the
+				// template if a user wants it.
+				view?.editor.replaceSelection(
+					markdown({
+						...recipe,
+						json: JSON.stringify(recipe, null, 2),
+					})
+				);
 			});
 		} catch (error) {
 			return;

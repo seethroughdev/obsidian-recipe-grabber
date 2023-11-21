@@ -41,7 +41,7 @@ export class SettingsTab extends PluginSettingTab {
 			.setClass("settingsTemplateRow")
 			.setName("Recipe template")
 			.setDesc(
-				"A Handlebars template to render the recipe. (see README for more info)"
+				"A Handlebars template to render the recipe. (see README for more info)."
 			)
 			.addButton((btn) =>
 				btn
