@@ -21,19 +21,19 @@ url: {{url}}
 ### Ingredients
 
 {{#each recipeIngredient}}
-- {{this}}
+- {{{this}}}
 {{/each}}
 
 ### Instructions
 
 {{#each recipeInstructions}}
 {{#if this.itemListElement}}
-#### {{this.name}}
+#### {{{this.name}}}
 {{#each this.itemListElement}}
-- {{this.text}}
+- {{{this.text}}}
 {{/each}}
 {{else}}
-- {{this.text}}
+- {{{this.text}}}
 {{/if}}
 {{/each}}
 

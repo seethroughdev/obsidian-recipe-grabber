@@ -2,8 +2,8 @@ name: Build obsidian plugin
 
 on:
     push:
-        branches:
-            - master
+        tags:
+            - "*"
     workflow_dispatch:
 
 env:
