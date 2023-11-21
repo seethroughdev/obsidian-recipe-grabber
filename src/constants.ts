@@ -12,11 +12,11 @@ author: {{author.name}}
 url: {{url}} 
 ---
 
-# [{{name}}]({{url}})
+# [{{{name}}}]({{url}})
 
-{{description}}
+{{{description}}}
 
-![{{name}}]({{image}})
+![{{{name}}}]({{image}})
 
 ### Ingredients
 
