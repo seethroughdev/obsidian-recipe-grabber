@@ -27,7 +27,14 @@ url: {{url}}
 ### Instructions
 
 {{#each recipeInstructions}}
+{{#if this.itemListElement}}
+#### {{this.name}}
+{{#each this.itemListElement}}
 - {{this.text}}
+{{/each}}
+{{else}}
+- {{this.text}}
+{{/if}}
 {{/each}}
 
 -----
