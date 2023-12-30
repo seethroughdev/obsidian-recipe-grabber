@@ -165,7 +165,7 @@ export default class RecipeGrabber extends Plugin {
 			// if there isn't a view due to settings or no current file open, lets create a file according to folder settings and open it
 			if (!view) {
 				if (this.settings.folder != "") {
-					await this.folderCheck(this.settings.folder) // this checks if folder exists and creates it if it doesn't.
+					await this.folderCheck() // this checks if folder exists and creates it if it doesn't.
 				}
 				const vault = this.app.vault;
 				// try and get recipe title
@@ -226,9 +226,9 @@ export default class RecipeGrabber extends Plugin {
 	/**
 	 * This function checks for an existing folder (creates if it doesn't exist)
 	 */
-	private async folderCheck(folderPath: string) {
+	private async folderCheck() {
 		const vault = app.vault;
-		folderPath = normalizePath(folderPath);
+		const folderPath = normalizePath(this.settings.folder);
 		const folder = vault.getAbstractFileByPath(folderPath);
 		if (folder && folder instanceof TFolder) {
 			return
