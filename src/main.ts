@@ -6,7 +6,7 @@
  * - add the recipe to the markdown editor
  */
 
-import { MarkdownView, Plugin, Notice, requestUrl } from "obsidian";
+import { MarkdownView, Plugin, Notice, requestUrl, normalizePath, TFolder } from "obsidian";
 import * as handlebars from "handlebars";
 import type { Recipe } from "schema-dts";
 import * as cheerio from "cheerio";
@@ -47,9 +47,9 @@ export default class RecipeGrabber extends Plugin {
 		this.addCommand({
 			id: c.CMD_OPEN_MODAL,
 			name: "Grab Recipe",
-			editorCallback: () => {
+			callback: () => {
 				new LoadRecipeModal(this.app, this.addRecipeToMarkdown).open();
-			},
+			}
 		});
 
 		// This adds a settings tab so the user can configure various aspects of the plugin
@@ -64,10 +64,6 @@ export default class RecipeGrabber extends Plugin {
 			settings.DEFAULT_SETTINGS,
 			await this.loadData()
 		);
-
-		// this.getRecipes(
-		// 	"https://cooking.nytimes.com/recipes/1016919-grilled-or-oven-roasted-santa-maria-tri-tip"
-		// );
 	}
 
 	async saveSettings() {
@@ -164,20 +160,21 @@ export default class RecipeGrabber extends Plugin {
 		const markdown = handlebars.compile(this.settings.recipeTemplate);
 		try {
 			const recipes = await this.fetchRecipes(url);
-			let view = this.app.workspace.getActiveViewOfType(MarkdownView);
-
-			// if there isn't a current file open, lets create a file and open it
+			let view = this.settings.saveInActiveFile ? this.app.workspace.getActiveViewOfType(MarkdownView) : null
+			
+			// if there isn't a view due to settings or no current file open, lets create a file according to folder settings and open it
 			if (!view) {
+				if (this.settings.folder != "") {
+					await this.folderCheck(this.settings.folder) // this checks if folder exists and creates it if it doesn't.
+				}
 				const vault = this.app.vault;
-
 				// try and get recipe title
 				const filename =
 					recipes?.length > 0 && recipes?.[0]?.name
 						? recipes[0].name
 						: new Date().getTime(); // Generate a unique timestamp
 
-				const path = `${filename}.md`; // File path with timestamp and .md extension
-
+				const path = this.settings.folder == "" ? `${normalizePath(this.settings.folder)}${filename}.md` : `${normalizePath(this.settings.folder)}/${filename}.md`  // File path with timestamp and .md extension
 				// Create a new untitled file with empty content
 				await vault.create(path, "");
 
@@ -185,7 +182,7 @@ export default class RecipeGrabber extends Plugin {
 				await this.app.workspace.openLinkText(path, "", true);
 				view = this.app.workspace.getActiveViewOfType(MarkdownView);
 			}
-
+		
 			if (!view) {
 				new Notice("Could not open a markdown view");
 				return;
@@ -225,6 +222,20 @@ export default class RecipeGrabber extends Plugin {
 			return;
 		}
 	};
+
+	/**
+	 * This function checks for an existing folder (creates if it doesn't exist)
+	 */
+	private async folderCheck(folderPath: string) {
+		const vault = app.vault;
+		folderPath = normalizePath(folderPath);
+		const folder = vault.getAbstractFileByPath(folderPath);
+		if (folder && folder instanceof TFolder) {
+			return
+		}
+		await vault.createFolder(folderPath);
+		return
+	}
 
 	/**
 	 * In order to make templating easier. Lets normalize the types of recipe images
