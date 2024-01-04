@@ -6,7 +6,14 @@
  * - add the recipe to the markdown editor
  */
 
-import { MarkdownView, Plugin, Notice, requestUrl, normalizePath, TFolder } from "obsidian";
+import {
+	MarkdownView,
+	Plugin,
+	Notice,
+	requestUrl,
+	normalizePath,
+	TFolder,
+} from "obsidian";
 import * as handlebars from "handlebars";
 import type { Recipe } from "schema-dts";
 import * as cheerio from "cheerio";
@@ -49,7 +56,7 @@ export default class RecipeGrabber extends Plugin {
 			name: "Grab Recipe",
 			callback: () => {
 				new LoadRecipeModal(this.app, this.addRecipeToMarkdown).open();
-			}
+			},
 		});
 
 		// This adds a settings tab so the user can configure various aspects of the plugin
@@ -115,6 +122,10 @@ export default class RecipeGrabber extends Plugin {
 				json.recipeIngredient = [json.recipeIngredient];
 			}
 
+			// if the user unsafely decides to not escape html, lets unescape it
+			if (this.settings.unescapeHtml) {
+				json = this.unescapeHtml(json);
+			}
 			recipes.push(json);
 		};
 
@@ -160,12 +171,14 @@ export default class RecipeGrabber extends Plugin {
 		const markdown = handlebars.compile(this.settings.recipeTemplate);
 		try {
 			const recipes = await this.fetchRecipes(url);
-			let view = this.settings.saveInActiveFile ? this.app.workspace.getActiveViewOfType(MarkdownView) : null
-			
+			let view = this.settings.saveInActiveFile
+				? this.app.workspace.getActiveViewOfType(MarkdownView)
+				: null;
+
 			// if there isn't a view due to settings or no current file open, lets create a file according to folder settings and open it
 			if (!view) {
 				if (this.settings.folder != "") {
-					await this.folderCheck() // this checks if folder exists and creates it if it doesn't.
+					await this.folderCheck(); // this checks if folder exists and creates it if it doesn't.
 				}
 				const vault = this.app.vault;
 				// try and get recipe title
@@ -174,7 +187,12 @@ export default class RecipeGrabber extends Plugin {
 						? recipes[0].name
 						: new Date().getTime(); // Generate a unique timestamp
 
-				const path = this.settings.folder == "" ? `${normalizePath(this.settings.folder)}${filename}.md` : `${normalizePath(this.settings.folder)}/${filename}.md`  // File path with timestamp and .md extension
+				const path =
+					this.settings.folder == ""
+						? `${normalizePath(this.settings.folder)}${filename}.md`
+						: `${normalizePath(
+								this.settings.folder
+						  )}/${filename}.md`; // File path with timestamp and .md extension
 				// Create a new untitled file with empty content
 				await vault.create(path, "");
 
@@ -182,7 +200,7 @@ export default class RecipeGrabber extends Plugin {
 				await this.app.workspace.openLinkText(path, "", true);
 				view = this.app.workspace.getActiveViewOfType(MarkdownView);
 			}
-		
+
 			if (!view) {
 				new Notice("Could not open a markdown view");
 				return;
@@ -231,10 +249,10 @@ export default class RecipeGrabber extends Plugin {
 		const folderPath = normalizePath(this.settings.folder);
 		const folder = vault.getAbstractFileByPath(folderPath);
 		if (folder && folder instanceof TFolder) {
-			return
+			return;
 		}
 		await vault.createFolder(folderPath);
-		return
+		return;
 	}
 
 	/**
@@ -264,6 +282,42 @@ export default class RecipeGrabber extends Plugin {
 		if ((recipe as any).image?.url) {
 			recipe.image = (recipe as any)?.image?.url || "";
 		}
+
+		return recipe;
+	}
+
+	/**
+	 * This function will go through the data object and attempt to convert all strings into unescaped strings
+	 * This is not the safest thing to do, and has to be opted in the settings. But it was requested by
+	 * several users.
+	 */
+	private unescapeHtml(recipe: Recipe): Recipe {
+		const unescape = (str: string) => {
+			const $ = cheerio.load(str);
+			return $.text();
+		};
+
+		// this awfully ugly function will traverse the object and unescape all strings, and pass
+		// anything else back in to check again
+		const traverse = (obj: any) => {
+			Object.keys(obj).forEach((key) => {
+				if (typeof obj[key] === "string") {
+					obj[key] = unescape(obj[key]);
+				} else if (Array.isArray(obj[key])) {
+					obj[key].forEach((item: unknown) => {
+						if (typeof item === "string") {
+							item = unescape(item);
+						} else if (typeof item === "object") {
+							traverse(item);
+						}
+					});
+				} else if (typeof obj[key] === "object") {
+					traverse(obj[key]);
+				}
+			});
+		};
+
+		traverse(recipe);
 
 		return recipe;
 	}
