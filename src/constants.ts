@@ -32,8 +32,10 @@ url: {{url}}
 {{#each this.itemListElement}}
 - {{{this.text}}}
 {{/each}}
-{{else}}
+{{else if this.text}}
 - {{{this.text}}}
+{{else}}
+- {{{this}}}
 {{/if}}
 {{/each}}
 
