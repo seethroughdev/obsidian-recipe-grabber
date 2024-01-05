@@ -164,6 +164,12 @@ export default class RecipeGrabber extends Plugin {
 		return recipes;
 	}
 
+	function decodeHtmlEntities(html: string): string {
+        const textarea = document.createElement('textarea');
+        textarea.innerHTML = html;
+        return textarea.value;
+    }
+
 	/**
 	 * This function handles all the templating of the recipes
 	 */
@@ -232,7 +238,7 @@ export default class RecipeGrabber extends Plugin {
 				view?.editor.replaceSelection(
 					markdown({
 						...recipe,
-						json: JSON.stringify(recipe, null, 2),
+						json: decodeHtmlEntities(JSON.stringify(recipe, null, 2)),
 					})
 				);
 			});
