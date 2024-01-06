@@ -5,6 +5,8 @@ import * as c from "./constants";
 export interface PluginSettings {
 	folder: string;
 	saveInActiveFile: boolean;
+	imgFolder: string;
+	saveImg: boolean;
 	recipeTemplate: string;
 	unescapeHtml: boolean;
 	debug: boolean;
@@ -13,6 +15,8 @@ export interface PluginSettings {
 export const DEFAULT_SETTINGS: PluginSettings = {
 	folder: "",
 	saveInActiveFile: false,
+	imgFolder: "",
+	saveImg: true,
 	recipeTemplate: c.DEFAULT_TEMPLATE,
 	unescapeHtml: false,
 	debug: false,
@@ -55,6 +59,28 @@ export class SettingsTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.saveInActiveFile)
 					.onChange(async (value) => {
 						this.plugin.settings.saveInActiveFile = value;
+						await this.plugin.saveSettings();
+					});
+			});
+		
+		new Setting(containerEl)
+			.setName("Save images")
+			.setDesc(
+				"Save images imported by recipes. If empty, will follow the recipe save folder setting."
+			)
+			.addText((text) => {
+				 text.setPlaceholder("eg: Recipes/RecipeImages")
+					.setValue(this.plugin.settings.imgFolder)
+					.onChange(async (value) => {
+						this.plugin.settings.imgFolder = value;
+						await this.plugin.saveSettings();
+					})
+				})
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.plugin.settings.saveImg)
+					.onChange(async (value) => {
+						this.plugin.settings.saveImg = value;
 						await this.plugin.saveSettings();
 					});
 			});
