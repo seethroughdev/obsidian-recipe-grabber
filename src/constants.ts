@@ -16,7 +16,7 @@ url: {{url}}
 
 {{{description}}}
 
-![{{{name}}}]({{image}})
+![[{{image}}]]
 
 ### Ingredients
 

@@ -176,9 +176,13 @@ export default class RecipeGrabber extends Plugin {
 				? this.app.workspace.getActiveViewOfType(MarkdownView)
 				: null;
 
+			let file: TFile | null = null; // this TFile instance is used by fetchImage() to get save folder path.
+
 			// if there isn't a view due to settings or no current file open, lets create a file according to folder settings and open it
 			if (!view) {
-				await this.folderCheck(this.settings.folder); // this checks if folder exists and creates it if it doesn't.
+				if (this.settings.folder != "") {
+					await this.folderCheck(this.settings.folder); // this checks if folder exists and creates it if it doesn't.	
+				} 
 				const vault = this.app.vault;
 				// try and get recipe title
 				const filename =
@@ -193,7 +197,7 @@ export default class RecipeGrabber extends Plugin {
 								this.settings.folder
 						  )}/${filename}.md`; // File path with timestamp and .md extension
 				// Create a new untitled file with empty content
-				await vault.create(path, "");
+				file = await vault.create(path, "");
 
 				// Open the newly created file
 				await this.app.workspace.openLinkText(path, "", true);
@@ -219,15 +223,18 @@ export default class RecipeGrabber extends Plugin {
 			}
 
 			// pages can have multiple recipes, lets add them all
+			let i = 0;
 			for (const recipe of recipes){
 				if (this.settings.debug) {
 					console.log(recipe);
 					console.log(markdown(recipe));
 				}
-				// this will download the images and replace the json "recipe.image" value with the path of the image file  
-				if (this.settings.saveImg) {
-					await this.folderCheck(this.settings.imgFolder);
-					const imgFile = await this.fetchImage(recipe.name, recipe.image)
+				// this will download the images and replace the json "recipe.image" value with the path of the image file.
+				if (this.settings.saveImg && file) {
+					if (this.settings.imgFolder != "") {
+						await this.folderCheck(this.settings.imgFolder);
+					}
+					const imgFile = await this.fetchImage(recipe.name, recipe.image, file)
 					if (imgFile) {
 						recipe.image = imgFile.path
 					}
@@ -293,9 +300,9 @@ export default class RecipeGrabber extends Plugin {
 	}
 
 	/**
-	 * This function fetches the image (array buffer) and saves as a file, returns the path of the file.
+	 * This function fetches the image (as an array buffer) and saves as a file, returns the path of the file.
 	 */
-	private async fetchImage(filename: Recipe["name"], imgUrl: Recipe["image"]) : Promise<false | TFile> {
+	private async fetchImage(filename: Recipe["name"], imgUrl: Recipe["image"], file: TFile) : Promise<false | TFile> {
 		if (!imgUrl) {
 			return false
 		}
@@ -304,18 +311,17 @@ export default class RecipeGrabber extends Plugin {
 				url: String(imgUrl),
 				method: "GET",
 			});
-			let type = await fileTypeFromBuffer(res.arrayBuffer)
+			const type = await fileTypeFromBuffer(res.arrayBuffer) // type of the image
 			if (!type) {
 				return false
 			}
-			let savePath = this.settings.imgFolder  
-			if (savePath == "") {
-				savePath = this.settings.folder
+			let path;
+			if (this.settings.imgFolder == "") {
+				//@ts-ignore
+				path = await this.app.vault.getAvailablePathForAttachments(filename, type.ext, file) // fetches the exact save path to create the file according to obsidian default attachment settings
+			} else {
+				path = `${normalizePath(this.settings.imgFolder)}/${filename}.${type.ext}` 
 			}
-			const path =
-				savePath == ""
-						? `${normalizePath(savePath)}${filename}.${type.ext}`
-						: `${normalizePath(savePath)}/${filename}.${type.ext}`;
 			const imgPath = await app.vault.createBinary(path, res.arrayBuffer)
 			return imgPath
 		} catch (err) {

@@ -44,7 +44,7 @@ export class SettingsTab extends PluginSettingTab {
 				text.setPlaceholder("eg: Recipes")
 					.setValue(this.plugin.settings.folder)
 					.onChange(async (value) => {
-						this.plugin.settings.folder = value;
+						this.plugin.settings.folder = value.trim();
 						await this.plugin.saveSettings();
 					});
 			});
@@ -66,13 +66,13 @@ export class SettingsTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Save images")
 			.setDesc(
-				"Save images imported by recipes. If empty, will follow the recipe save folder setting."
+				"Save images imported by recipes. If empty, will follow: Files and links > new attachment location. Note: if settings is toggled off or image save fails, will revert to direct URL."
 			)
 			.addText((text) => {
 				 text.setPlaceholder("eg: Recipes/RecipeImages")
 					.setValue(this.plugin.settings.imgFolder)
 					.onChange(async (value) => {
-						this.plugin.settings.imgFolder = value;
+						this.plugin.settings.imgFolder = value.trim();
 						await this.plugin.saveSettings();
 					})
 				})
