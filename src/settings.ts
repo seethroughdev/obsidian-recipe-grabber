@@ -16,7 +16,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 	folder: "",
 	saveInActiveFile: false,
 	imgFolder: "",
-	saveImg: true,
+	saveImg: false,
 	recipeTemplate: c.DEFAULT_TEMPLATE,
 	unescapeHtml: false,
 	debug: false,
@@ -62,12 +62,20 @@ export class SettingsTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					});
 			});
+
+		const saveImgDescription = document.createDocumentFragment();
+		saveImgDescription.append(
+			"Save images imported by recipes. If empty, will follow: Files and links > new attachment location. See ",
+			saveImgDescription.createEl("a", {
+				href: "https://github.com/seethroughdev/obsidian-recipe-grabber#settings",
+				text: "README",
+			}),
+			" for more info."
+		);
 		
 		new Setting(containerEl)
 			.setName("Save images")
-			.setDesc(
-				"Save images imported by recipes. If empty, will follow: Files and links > new attachment location. Note: if settings is toggled off or image save fails, will revert to direct URL."
-			)
+			.setDesc(saveImgDescription)
 			.addText((text) => {
 				 text.setPlaceholder("eg: Recipes/RecipeImages")
 					.setValue(this.plugin.settings.imgFolder)
@@ -89,7 +97,7 @@ export class SettingsTab extends PluginSettingTab {
 		templateDescription.append(
 			"Here you can edit the Template for newly created files. See ",
 			templateDescription.createEl("a", {
-				href: "https://github.com/seethroughdev/obsidian-recipe-grabber/blob/master/README.md",
+				href: "https://github.com/seethroughdev/obsidian-recipe-grabber#custom-templating",
 				text: "README",
 			}),
 			" for more info."

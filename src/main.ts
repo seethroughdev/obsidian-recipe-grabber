@@ -18,7 +18,7 @@ import {
 import * as handlebars from "handlebars";
 import type { Recipe } from "schema-dts";
 import * as cheerio from "cheerio";
-import { fileTypeFromBuffer } from 'file-type';
+import { fileTypeFromBuffer } from "file-type";
 import * as c from "./constants";
 import * as settings from "./settings";
 import { LoadRecipeModal } from "./modal-load-recipe";
