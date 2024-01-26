@@ -20,6 +20,7 @@ import * as cheerio from "cheerio";
 import * as c from "./constants";
 import * as settings from "./settings";
 import { LoadRecipeModal } from "./modal-load-recipe";
+import { scoreForIngredients, scoreForInstructions, findListInSection } from "./dom-parser";
 
 export default class RecipeGrabber extends Plugin {
 	settings: settings.PluginSettings;
@@ -114,7 +115,7 @@ export default class RecipeGrabber extends Plugin {
 		 * Some details are in varying formats, for templating to be easier,
 		 * lets attempt to normalize them
 		 */
-		const normalizeSchema = (json: Recipe): void => {
+		const normalizeSchema = (json: Recipe): Recipe => {
 			json.url = url.href;
 			json = this.normalizeImages(json);
 
@@ -126,14 +127,17 @@ export default class RecipeGrabber extends Plugin {
 			if (this.settings.unescapeHtml) {
 				json = this.unescapeHtml(json);
 			}
-			recipes.push(json);
+
+			return json
 		};
 
 		/**
 		 * Unfortunately, some schemas are arrays, some not. Some in @graph, some not.
 		 * Here we attempt to move all kinds into a single array of RecipeLeafs
 		 */
-		function handleSchemas(schemas: any[]): void {
+		function handleSchemas(schemas: any[]): Recipe[] {
+			const normalizedSchemas:Recipe[] = []
+
 			schemas.forEach((schema) => {
 				if ("@graph" in schema && Array.isArray(schema?.["@graph"])) {
 					return handleSchemas(schema["@graph"]);
@@ -145,21 +149,61 @@ export default class RecipeGrabber extends Plugin {
 							? _type.includes("Recipe")
 							: schema?.["@type"] === "Recipe"
 					) {
-						normalizeSchema(schema);
+						normalizedSchemas.push(normalizeSchema(schema));
 					}
 				}
 			});
+
+			return normalizedSchemas
+		}
+		
+		function processRecipeSchema(schema: Recipe): Recipe {
+			if(!schema.recipeIngredient?.length) {
+				console.log("ingreds")
+				const ingredientsList = findListInSection($, "Ingredients", scoreForIngredients)
+				schema.recipeIngredient = ingredientsList
+			}
+
+			if(!schema.recipeInstructions?.length) {
+				console.log("instructions")
+				const instructionList = findListInSection($, "Directions|Instructions", scoreForInstructions)
+				schema.recipeInstructions = instructionList
+			}
+
+			return schema
 		}
 
 		// parse the dom of the page and look for any schema.org/Recipe
-		$('script[type="application/ld+json"]').each((i, el) => {
+		const recipeJsonElements = $('script[type="application/ld+json"]')
+		recipeJsonElements.each((i, el) => {
 			const content = $(el).text()?.trim();
 			const json = JSON.parse(content);
 
 			// to make things consistent, we'll put all recipes into an array
 			const data = Array.isArray(json) ? json : [json];
-			handleSchemas(data);
+			const normalizedSchemas = handleSchemas(data);
+
+			normalizedSchemas.forEach(schema => {
+				const fullRecipe = processRecipeSchema(schema)
+				recipes.push(fullRecipe)
+			})
 		});
+
+		if(!recipeJsonElements.length) {
+			const ingredientsList = findListInSection($, "Ingredients", scoreForIngredients)
+			const instructionList = findListInSection($, "Directions|Instructions", scoreForInstructions)
+
+			const recipe = {
+				"@context": "https://schema.org/",
+				"@type": "Recipe",
+				name: $('title').text()?.trim(),
+				recipeIngredient: ingredientsList,
+				recipeInstructions: instructionList,
+				url: url.href,
+			}
+
+			recipes.push(recipe)
+		}
 
 		return recipes;
 	}
