@@ -94,8 +94,13 @@ export function extractMicrodata($: CheerioAPI): Recipe[] {
 		};
 	
 		$(element).find('[itemprop]').each(function() {
-			const propName = $(this).attr('itemprop');
+			let propName = $(this).attr('itemprop');
 			if (typeof propName === 'string') {
+				// Normalize itemprop "ingredients" to "recipeIngredient"
+				if (propName === 'ingredients') {
+					propName = 'recipeIngredient';
+				}
+	
 				const propValue = $(this).is('[itemscope]') ? processItemScope(this) : $(this).text().trim();
 	
 				// Check if the property already exists

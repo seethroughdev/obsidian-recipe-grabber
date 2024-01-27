@@ -116,16 +116,17 @@ export default class RecipeGrabber extends Plugin {
 		const recipeJsonElements = $('script[type="application/ld+json"]')
 		const jsonRecipes = parseJsonSchema($, recipeJsonElements)
 		if(jsonRecipes.length) {
-			recipes.push(...jsonRecipes)
+			return jsonRecipes
 		}
 
-		// If we didn't find any of those, let's go ahead and scrape the HTML.
-		if(!jsonRecipes.length) {
-			const microData = extractMicrodata($)
-			console.log(microData)
+		const microData = extractMicrodata($)
+		if(microData.length) {
+			return microData
+		}
 
-			const domRecipes = parseDom($)
-			recipes.push(...domRecipes)
+		const domRecipes = parseDom($)
+		if(domRecipes.length) {
+			return domRecipes
 		}
 
 		return recipes;
