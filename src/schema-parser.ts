@@ -61,7 +61,7 @@ function processRecipeSchema($: CheerioAPI, schema: Recipe): Recipe {
 	return schema
 }
 
-export function parseJsonSchema($: CheerioAPI, elements: Cheerio<Element>): Recipe[] {
+export function parseJsonSchema($: CheerioAPI, elements: Cheerio<Element>, url: string): Recipe[] {
 	const recipes:Recipe[] = []
 
 	elements.each((i, el) => {
@@ -75,7 +75,7 @@ export function parseJsonSchema($: CheerioAPI, elements: Cheerio<Element>): Reci
 		normalizedSchemas.forEach(schema => {
 			const fullRecipe = {
 				...processRecipeSchema($, schema),
-				// url: url.href
+				url: url
 			}
 
 			recipes.push(fullRecipe)
@@ -85,12 +85,16 @@ export function parseJsonSchema($: CheerioAPI, elements: Cheerio<Element>): Reci
 	return recipes
 }
 
-export function extractMicrodata($: CheerioAPI): Recipe[] {
+export function extractMicrodata($: CheerioAPI, url: string): Recipe[] {
+	// const ogImage = $('meta[property="og:image"]').attr('content') || '';
+	// TODO - Maybe insert this if it doesn't exist
     const dataObjects: Recipe[] = [];
 
 	function processItemScope(element: Element): Recipe {
+
 		const data: Recipe = {
-			"@type": "Recipe" as const
+			"@type": "Recipe" as const,
+			url: url
 		};
 	
 		$(element).find('[itemprop]').each(function() {

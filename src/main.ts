@@ -114,17 +114,17 @@ export default class RecipeGrabber extends Plugin {
 
 		// Parse the dom of the page and look for any schema.org/Recipe - these will generally be faster and easier to find/parse
 		const recipeJsonElements = $('script[type="application/ld+json"]')
-		const jsonRecipes = parseJsonSchema($, recipeJsonElements)
+		const jsonRecipes = parseJsonSchema($, recipeJsonElements, url.href)
 		if(jsonRecipes.length) {
 			return jsonRecipes
 		}
 
-		const microData = extractMicrodata($)
+		const microData = extractMicrodata($, url.href)
 		if(microData.length) {
 			return microData
 		}
 
-		const domRecipes = parseDom($)
+		const domRecipes = parseDom($, url.href)
 		if(domRecipes.length) {
 			return domRecipes
 		}

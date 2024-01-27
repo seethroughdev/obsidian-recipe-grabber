@@ -97,20 +97,25 @@ export function findListInSection($: CheerioAPI, sectionName: string, scoringFun
 	return list;
 }
 
-export function parseDom($: CheerioAPI): Recipe[] {
-	const recipes:Recipe[] = []
+export function parseDom($: CheerioAPI, url: string): Recipe {
 	const ingredientsList = findListInSection($, "Ingredients", scoreForIngredients)
 	const instructionList = findListInSection($, "Directions|Instructions", scoreForInstructions)
+	const author = $('meta[name="author"]').attr('content') || $('meta[property="og:author"]').attr('content')
+	const ogImage = $('meta[property="og:image"]').attr('content') || '';
 
 	const recipe = {
 		"@context": "https://schema.org/",
 		"@type": "Recipe" as const,
 		name: $('title').text()?.trim(),
 		recipeIngredient: ingredientsList,
-		recipeInstructions: instructionList
+		recipeInstructions: instructionList,
+		image: ogImage,
+		url: url,
+		author: {
+			"@type": "Person" as const,
+			name: author
+		}
 	}
 
-	recipes.push(recipe)
-
-	return recipes
+	return recipe
 }
