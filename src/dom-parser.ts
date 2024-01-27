@@ -1,27 +1,28 @@
-export function scoreForIngredients(text) {
+import { CheerioAPI } from "cheerio";
+import type { Recipe } from "schema-dts";
+
+export function scoreForIngredients(text: string): number {
 	let score = 0;
 	if (text.length < 100) score += 1; // Shorter text is more likely to be an ingredient
 	if (/^\d/.test(text)) score += 1; // Starts with a number (e.g., "3 cups of rice")
 	if (/\b(cup|lb|oz|teaspoon|tablespoon)\b/i.test(text)) score += 1; // Contains a unit
 	if (/\b(salt|olive oil|butter)\b/i.test(text)) score += 1; // Contains common ingredient words
 
-	console.log("scoreForIngredients", score)
 	return score;
 }
 
-export function scoreForInstructions(text) {
+export function scoreForInstructions(text: string): number {
 	let score = 0;
 	if (text.length > 100) score += 1; // Longer text is more likely to be an instruction
 	if (/^[A-Z]/.test(text)) score += 1; // Starts with a capital letter
 	if (/[.!?]$/.test(text)) score += 1; // Ends in punctuation
 	if (/\b(Sprinkle|Mix|Heat|Cook|Stir|boil|Remove|Cover|Combine|Preheat)\b/i.test(text)) score += 1; // Contains instructional words
 
-	console.log("scoreForInstructions", score)
 	return score;
 }
 
-export function findListInSection($, sectionName, scoringFunction) {
-	let list = [];
+export function findListInSection($: CheerioAPI, sectionName: string, scoringFunction: (text: string) => number): string[] {
+	const list: string[] = [];
 
 	function findSection() {
 		let section = null;
@@ -38,7 +39,7 @@ export function findListInSection($, sectionName, scoringFunction) {
 		return section;
 	}
 
-	function dfs(node) {
+	function dfs(node: any) {
 		if (node.type === 'text') {
 			const text = $(node).text().trim();
 			if (text) {
@@ -50,13 +51,12 @@ export function findListInSection($, sectionName, scoringFunction) {
 		}
 
 		if (node.children) {
-			node.children.forEach(child => dfs(child));
+			node.children.forEach((child:any) => dfs(child));
 		}
 	}
 
 	// Start DFS from the identified section, if available
 	const section = findSection(); 
-	console.log(section)
 	if (section) {
 		dfs(section);
 	} else {
@@ -65,4 +65,22 @@ export function findListInSection($, sectionName, scoringFunction) {
 	}
 
 	return list;
+}
+
+export function parseDom($: CheerioAPI): Recipe[] {
+	const recipes:Recipe[] = []
+	const ingredientsList = findListInSection($, "Ingredients", scoreForIngredients)
+	const instructionList = findListInSection($, "Directions|Instructions", scoreForInstructions)
+
+	const recipe = {
+		"@context": "https://schema.org/",
+		"@type": "Recipe" as const,
+		name: $('title').text()?.trim(),
+		recipeIngredient: ingredientsList,
+		recipeInstructions: instructionList
+	}
+
+	recipes.push(recipe)
+
+	return recipes
 }
