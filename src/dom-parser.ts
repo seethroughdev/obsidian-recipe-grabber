@@ -43,7 +43,7 @@ export function findListInSection($: CheerioAPI, sectionName: string, scoringFun
 		let section = null;
 	
 		// Look for headings or other elements that might contain the section name
-		$("h1, h2, h3, h4, h5, h6").each((i, el) => {
+		$("h1, h2, h3, h4, h5, h6, div").each((i, el) => {
 			const text = $(el).text().trim();
             if (new RegExp(sectionName, 'i').test(text)) {
                 // If the section name is found, look for the closest parent that contains
