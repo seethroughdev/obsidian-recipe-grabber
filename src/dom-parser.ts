@@ -1,4 +1,4 @@
-import { CheerioAPI } from "cheerio";
+import type { CheerioAPI, Cheerio, Element } from "cheerio";
 import type { Recipe } from "schema-dts";
 
 export function scoreForIngredients(text: string): number {
@@ -36,24 +36,56 @@ export function scoreForInstructions(text: string): number {
     return score;
 }
 
+function scoreForSection($: CheerioAPI, el: Element, sectionName: string): number {
+    let score = 0;
+
+    // Score based on proximity to list tags (ul or ol)
+    const proximityScore = getProximityToTag($, el, 'ul, ol');
+    score += proximityScore;
+
+    // Increase score if the element is a heading tag, which often labels sections
+    if (/h[1-6]/i.test(el.tagName)) {
+        score += 2;
+    }
+
+    return score;
+}
+
+// Helper function to calculate proximity to specific tags (like ul or ol)
+function getProximityToTag($: CheerioAPI, el: Element, tagName: string): number {
+    let proximityScore = 0;
+    if ($(el).find(tagName).length > 0) {
+        proximityScore += 5; // Closer proximity increases the score
+    }
+    return proximityScore;
+}
+
 export function findListInSection($: CheerioAPI, sectionName: string, scoringFunction: (text: string) => number): string[] {
 	const list: string[] = [];
 
 	function findSection() {
 		let section = null;
 	
-		// Look for headings or other elements that might contain the section name
+		const sectionScores: {[key: number]: number} = {};
+
+		// Scoring potential sections
 		$("h1, h2, h3, h4, h5, h6, div").each((i, el) => {
 			const text = $(el).text().trim();
-            if (new RegExp(sectionName, 'i').test(text)) {
-                // If the section name is found, look for the closest parent that contains
-                // both the section name and a list (ul, ol) or other relevant elements
-                section = $(el).closest(':has(ul, ol, p, div)').get(0);
-                return false; // Breaks the loop once a suitable section is found
-            }
+			if (new RegExp(sectionName, 'i').test(text)) {
+				const score = scoreForSection($, el, sectionName);
+				sectionScores[i] = score;
+			}
 		});
-	
-		return section;
+
+		const bestSectionIndex = Object.keys(sectionScores).reduce((a, b) => {
+			const scoreA = sectionScores[+a]; // Convert key 'a' to number and get its score
+			const scoreB = sectionScores[+b]; // Convert key 'b' to number and get its score
+			return scoreA > scoreB ? +a : +b; // Compare scores and return the appropriate key as a number
+		}, 0);
+		
+		const bestSection = $("h1, h2, h3, h4, h5, h6, div").get(bestSectionIndex);
+		
+		return bestSection;
 	}
 
 	function dfs(node: any, foundFirstIngredient = false) {
