@@ -112,11 +112,30 @@ export default class RecipeGrabber extends Plugin {
 		 */
 		const recipes: Recipe[] = [];
 
+		/**
+		 * Some details are in varying formats, for templating to be easier,
+		 * lets attempt to normalize them
+		 */
+		function normalizeSchema(json: Recipe): Recipe {
+			json = this.normalizeImages(json);
+
+			if (typeof json.recipeIngredient === "string") {
+				json.recipeIngredient = [json.recipeIngredient];
+			}
+
+			// if the user unsafely decides to not escape html, lets unescape it
+			if (this.settings.unescapeHtml) {
+				json = this.unescapeHtml(json);
+			}
+
+			return json
+		}
+
 		// Parse the dom of the page and look for any schema.org/Recipe - these will generally be faster and easier to find/parse
 		const recipeJsonElements = $('script[type="application/ld+json"]')
 		const jsonRecipes = parseJsonSchema($, recipeJsonElements, url.href)
 		if(jsonRecipes.length) {
-			return jsonRecipes
+			return jsonRecipes.map(schema => normalizeSchema(schema))
 		}
 
 		const microData = extractMicrodata($, url.href)
@@ -221,5 +240,72 @@ export default class RecipeGrabber extends Plugin {
 		}
 		await vault.createFolder(folderPath);
 		return;
+	}
+
+	/**
+	 * In order to make templating easier. Lets normalize the types of recipe images
+	 * to a single string url
+	 */
+	private normalizeImages(recipe: Recipe): Recipe {
+		if (typeof recipe.image === "string") {
+			return recipe;
+		}
+
+		if (Array.isArray(recipe.image)) {
+			const image = recipe.image?.[0];
+			if (typeof image === "string") {
+				recipe.image = image;
+				return recipe;
+			}
+			if (image?.url) {
+				recipe.image = image.url;
+				return recipe;
+			}
+		}
+
+		/**
+		 * Although the spec does not show ImageObject as a top level option, it is used in some big sites.
+		 */
+		if ((recipe as any).image?.url) {
+			recipe.image = (recipe as any)?.image?.url || "";
+		}
+
+		return recipe;
+	}
+
+	/**
+	 * This function will go through the data object and attempt to convert all strings into unescaped strings
+	 * This is not the safest thing to do, and has to be opted in the settings. But it was requested by
+	 * several users.
+	 */
+	private unescapeHtml(recipe: Recipe): Recipe {
+		const unescape = (str: string) => {
+			const $ = cheerio.load(str);
+			return $.text();
+		};
+
+		// this awfully ugly function will traverse the object and unescape all strings, and pass
+		// anything else back in to check again
+		const traverse = (obj: any) => {
+			Object.keys(obj).forEach((key) => {
+				if (typeof obj[key] === "string") {
+					obj[key] = unescape(obj[key]);
+				} else if (Array.isArray(obj[key])) {
+					obj[key].forEach((item: unknown) => {
+						if (typeof item === "string") {
+							item = unescape(item);
+						} else if (typeof item === "object") {
+							traverse(item);
+						}
+					});
+				} else if (typeof obj[key] === "object") {
+					traverse(obj[key]);
+				}
+			});
+		};
+
+		traverse(recipe);
+
+		return recipe;
 	}
 }

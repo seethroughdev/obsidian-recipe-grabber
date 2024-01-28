@@ -10,7 +10,7 @@ describe('Recipe Schema Parser', () => {
     const $ = cheerio.load(mockHtml);
 
 	const recipeJsonElements = $('script[type="application/ld+json"]')
-	const jsonRecipes = parseJsonSchema($, recipeJsonElements)
+	const jsonRecipes = parseJsonSchema($, recipeJsonElements, '')
 
 	expect(Array.isArray(jsonRecipes)).toBe(true);
 	if (jsonRecipes.length > 0) {
@@ -27,7 +27,7 @@ describe('Recipe Schema Parser', () => {
     const mockHtml = fs.readFileSync(mockHtmlPath, 'utf8');
     const $ = cheerio.load(mockHtml);
 
-	const jsonRecipes = extractMicrodata($)
+	const jsonRecipes = extractMicrodata($, '')
 	expect(Array.isArray(jsonRecipes)).toBe(true);
 
 	if (jsonRecipes.length > 0) {
@@ -46,7 +46,7 @@ describe('Recipe Schema Parser', () => {
     const $ = cheerio.load(mockHtml);
 
 	const recipeJsonElements = $('script[type="application/ld+json"]')
-	const jsonRecipes = parseJsonSchema($, recipeJsonElements)
+	const jsonRecipes = parseJsonSchema($, recipeJsonElements, '')
 
 	expect(Array.isArray(jsonRecipes)).toBe(true);
 	if (jsonRecipes.length > 0) {

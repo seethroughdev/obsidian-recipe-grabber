@@ -97,7 +97,7 @@ export function findListInSection($: CheerioAPI, sectionName: string, scoringFun
 	return list;
 }
 
-export function parseDom($: CheerioAPI, url: string): Recipe {
+export function parseDom($: CheerioAPI, url: string): Recipe[] {
 	const ingredientsList = findListInSection($, "Ingredients", scoreForIngredients)
 	const instructionList = findListInSection($, "Directions|Instructions", scoreForInstructions)
 	const author = $('meta[name="author"]').attr('content') || $('meta[property="og:author"]').attr('content')
@@ -117,5 +117,5 @@ export function parseDom($: CheerioAPI, url: string): Recipe {
 		}
 	}
 
-	return recipe
+	return [recipe]
 }
