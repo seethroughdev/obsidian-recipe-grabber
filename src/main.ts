@@ -130,19 +130,21 @@ export default class RecipeGrabber extends Plugin {
 
 			return json
 		}
-
-		// Parse the dom of the page and look for any schema.org/Recipe - these will generally be faster and easier to find/parse
+		
+		// 1. Parse the dom of the page and look for any schema.org/Recipe - these will generally be faster and easier to find/parse
 		const recipeJsonElements = $('script[type="application/ld+json"]')
 		const jsonRecipes = parseJsonSchema($, recipeJsonElements, url.href)
 		if(jsonRecipes.length) {
 			return jsonRecipes.map(schema => normalizeSchema(schema))
 		}
 
+		// 2. Parse the dom for html microdata - https://html.spec.whatwg.org/multipage/microdata.html#microdata
 		const microData = extractMicrodata($, url.href)
 		if(microData.length) {
 			return microData
 		}
 
+		// 3. Lastly, scrape the dom scoring HTML elements until there is enough data to save a recipe
 		const domRecipes = parseDom($, url.href)
 		if(domRecipes.length) {
 			return domRecipes
