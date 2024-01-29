@@ -70,7 +70,7 @@ export default class RecipeGrabber extends Plugin {
 			//@ts-ignore
 			this.app.workspace.on('receive-text-menu', (menu: Menu, shareText: string) => {
 				menu.addItem((item: MenuItem) => {
-					item.setTitle('RecipeGrabber');
+					item.setTitle('Recipe Grabber - Save Recipe');
 					item.setIcon('chef-hat');
 					item.onClick(() => this.fetchRecipes(shareText));
 				});
