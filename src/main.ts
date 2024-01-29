@@ -98,6 +98,7 @@ export default class RecipeGrabber extends Plugin {
 	 * The main function to go get the recipe, and format it for the template
 	 */
 	async fetchRecipes(_url: string): Promise<Recipe[]> {
+
 		const url = new URL(_url);
 
 		if (url.protocol !== "http:" && url.protocol !== "https:") {
@@ -122,16 +123,10 @@ export default class RecipeGrabber extends Plugin {
 		const $ = cheerio.load(response.text);
 
 		/**
-		 * the main recipes list, we'll use to render from
-		 * its an array instead because a page can technically have multiple recipes on it
-		 */
-		const recipes: Recipe[] = [];
-
-		/**
 		 * Some details are in varying formats, for templating to be easier,
 		 * lets attempt to normalize them
 		 */
-		function normalizeSchema(json: Recipe): Recipe {
+		const normalizeSchema = (json: Recipe): Recipe => {
 			json = this.normalizeImages(json);
 
 			if (typeof json.recipeIngredient === "string") {
@@ -149,23 +144,27 @@ export default class RecipeGrabber extends Plugin {
 		// 1. Parse the dom of the page and look for any schema.org/Recipe - these will generally be faster and easier to find/parse
 		const recipeJsonElements = $('script[type="application/ld+json"]')
 		const jsonRecipes = parseJsonSchema($, recipeJsonElements, url.href)
+		console.log("fetchRecipes: Before returning jsonRecipes", jsonRecipes);
 		if(jsonRecipes.length) {
+			console.log(jsonRecipes.map(schema => normalizeSchema(schema)))
 			return jsonRecipes.map(schema => normalizeSchema(schema))
 		}
 
 		// 2. Parse the dom for html microdata - https://html.spec.whatwg.org/multipage/microdata.html#microdata
 		const microData = extractMicrodata($, url.href)
 		if(microData.length) {
-			return microData
+			console.log(microData)
+			return microData.map(schema => normalizeSchema(schema))
 		}
 
 		// 3. Lastly, scrape the dom scoring HTML elements until there is enough data to save a recipe
 		const domRecipes = parseDom($, url.href)
 		if(domRecipes.length) {
-			return domRecipes
+			console.log(domRecipes)
+			return domRecipes.map(schema => normalizeSchema(schema))
 		}
 
-		return recipes;
+		return [];
 	}
 
 	/**
@@ -175,6 +174,8 @@ export default class RecipeGrabber extends Plugin {
 		const markdown = handlebars.compile(this.settings.recipeTemplate);
 		try {
 			const recipes = await this.fetchRecipes(url);
+
+			console.log(recipes)
 			let view = this.settings.saveInActiveFile
 				? this.app.workspace.getActiveViewOfType(MarkdownView)
 				: null;
@@ -264,6 +265,7 @@ export default class RecipeGrabber extends Plugin {
 	 * to a single string url
 	 */
 	private normalizeImages(recipe: Recipe): Recipe {
+		console.log(recipe)
 		if (typeof recipe.image === "string") {
 			return recipe;
 		}
