@@ -144,23 +144,19 @@ export default class RecipeGrabber extends Plugin {
 		// 1. Parse the dom of the page and look for any schema.org/Recipe - these will generally be faster and easier to find/parse
 		const recipeJsonElements = $('script[type="application/ld+json"]')
 		const jsonRecipes = parseJsonSchema($, recipeJsonElements, url.href)
-		console.log("fetchRecipes: Before returning jsonRecipes", jsonRecipes);
 		if(jsonRecipes.length) {
-			console.log(jsonRecipes.map(schema => normalizeSchema(schema)))
 			return jsonRecipes.map(schema => normalizeSchema(schema))
 		}
 
 		// 2. Parse the dom for html microdata - https://html.spec.whatwg.org/multipage/microdata.html#microdata
 		const microData = extractMicrodata($, url.href)
 		if(microData.length) {
-			console.log(microData)
 			return microData.map(schema => normalizeSchema(schema))
 		}
 
 		// 3. Lastly, scrape the dom scoring HTML elements until there is enough data to save a recipe
 		const domRecipes = parseDom($, url.href)
 		if(domRecipes.length) {
-			console.log(domRecipes)
 			return domRecipes.map(schema => normalizeSchema(schema))
 		}
 
@@ -174,8 +170,6 @@ export default class RecipeGrabber extends Plugin {
 		const markdown = handlebars.compile(this.settings.recipeTemplate);
 		try {
 			const recipes = await this.fetchRecipes(url);
-
-			console.log(recipes)
 			let view = this.settings.saveInActiveFile
 				? this.app.workspace.getActiveViewOfType(MarkdownView)
 				: null;
