@@ -66,16 +66,18 @@ export default class RecipeGrabber extends Plugin {
 		// This adds a settings tab so the user can configure various aspects of the plugin
 		this.addSettingTab(new settings.SettingsTab(this.app, this));
 
-		this.registerEvent(
-			//@ts-ignore
-			this.app.workspace.on('receive-text-menu', (menu: Menu, shareText: string) => {
-				menu.addItem((item: MenuItem) => {
-					item.setTitle('Recipe Grabber - Save Recipe');
-					item.setIcon('chef-hat');
-					item.onClick(() => this.fetchRecipes(shareText));
-				});
-			}),
-		);
+		if (this.settings.extendShareMenu) {
+			this.registerEvent(
+				//@ts-ignore
+				this.app.workspace.on('receive-text-menu', (menu: Menu, shareText: string) => {
+					menu.addItem((item: MenuItem) => {
+						item.setTitle('Recipe Grabber - Save Recipe');
+						item.setIcon('chef-hat');
+						item.onClick(() => this.fetchRecipes(shareText));
+					});
+				}),
+			);
+		}
 	}
 
 	onunload() {}

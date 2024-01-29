@@ -8,6 +8,7 @@ export interface PluginSettings {
 	recipeTemplate: string;
 	unescapeHtml: boolean;
 	debug: boolean;
+	extendShareMenu: boolean;
 }
 
 export const DEFAULT_SETTINGS: PluginSettings = {
@@ -16,6 +17,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 	recipeTemplate: c.DEFAULT_TEMPLATE,
 	unescapeHtml: false,
 	debug: false,
+	extendShareMenu: false
 };
 
 export class SettingsTab extends PluginSettingTab {
@@ -109,6 +111,24 @@ export class SettingsTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					});
 			});
+
+		new Setting(containerEl)
+            .setName('Extend share menu')
+            .setDesc(
+                'If enabled, share menu will be extended with shortcut to grab a Recipe directly from it. Requires plugin reload or Obsidian restart to apply change.',
+            )
+            .addToggle((toggle) =>
+                toggle
+                    .setValue(
+                        Object.prototype.hasOwnProperty.call(this.plugin.settings, 'extendShareMenu')
+                            ? this.plugin.settings.extendShareMenu
+                            : DEFAULT_SETTINGS.extendShareMenu,
+                    )
+                    .onChange(async (value) => {
+                        this.plugin.settings.extendShareMenu = value;
+                        await this.plugin.saveSettings();
+                    }),
+            );
 
 		new Setting(containerEl)
 			.setName("Debug mode")
