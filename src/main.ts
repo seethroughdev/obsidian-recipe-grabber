@@ -13,6 +13,8 @@ import {
 	requestUrl,
 	normalizePath,
 	TFolder,
+	Menu,
+	MenuItem
 } from "obsidian";
 import * as handlebars from "handlebars";
 import type { Recipe } from "schema-dts";
@@ -63,6 +65,17 @@ export default class RecipeGrabber extends Plugin {
 
 		// This adds a settings tab so the user can configure various aspects of the plugin
 		this.addSettingTab(new settings.SettingsTab(this.app, this));
+
+		this.registerEvent(
+			//@ts-ignore
+			this.app.workspace.on('receive-text-menu', (menu: Menu, shareText: string) => {
+				menu.addItem((item: MenuItem) => {
+					item.setTitle('RecipeGrabber');
+					item.setIcon('chef-hat');
+					item.onClick(() => this.fetchRecipes(shareText));
+				});
+			}),
+		);
 	}
 
 	onunload() {}
