@@ -5,6 +5,8 @@ import * as c from "./constants";
 export interface PluginSettings {
 	folder: string;
 	saveInActiveFile: boolean;
+	imgFolder: string;
+	saveImg: boolean;
 	recipeTemplate: string;
 	unescapeHtml: boolean;
 	debug: boolean;
@@ -13,6 +15,8 @@ export interface PluginSettings {
 export const DEFAULT_SETTINGS: PluginSettings = {
 	folder: "",
 	saveInActiveFile: false,
+	imgFolder: "",
+	saveImg: false,
 	recipeTemplate: c.DEFAULT_TEMPLATE,
 	unescapeHtml: false,
 	debug: false,
@@ -40,7 +44,7 @@ export class SettingsTab extends PluginSettingTab {
 				text.setPlaceholder("eg: Recipes")
 					.setValue(this.plugin.settings.folder)
 					.onChange(async (value) => {
-						this.plugin.settings.folder = value;
+						this.plugin.settings.folder = value.trim();
 						await this.plugin.saveSettings();
 					});
 			});
@@ -59,11 +63,41 @@ export class SettingsTab extends PluginSettingTab {
 					});
 			});
 
+		const saveImgDescription = document.createDocumentFragment();
+		saveImgDescription.append(
+			"Save images imported by recipes. If empty, will follow: Files and links > new attachment location. See ",
+			saveImgDescription.createEl("a", {
+				href: "https://github.com/seethroughdev/obsidian-recipe-grabber#settings",
+				text: "README",
+			}),
+			" for more info."
+		);
+		
+		new Setting(containerEl)
+			.setName("Save images")
+			.setDesc(saveImgDescription)
+			.addText((text) => {
+				 text.setPlaceholder("eg: Recipes/RecipeImages")
+					.setValue(this.plugin.settings.imgFolder)
+					.onChange(async (value) => {
+						this.plugin.settings.imgFolder = value.trim();
+						await this.plugin.saveSettings();
+					})
+				})
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.plugin.settings.saveImg)
+					.onChange(async (value) => {
+						this.plugin.settings.saveImg = value;
+						await this.plugin.saveSettings();
+					});
+			});
+
 		const templateDescription = document.createDocumentFragment();
 		templateDescription.append(
 			"Here you can edit the Template for newly created files. See ",
 			templateDescription.createEl("a", {
-				href: "https://github.com/seethroughdev/obsidian-recipe-grabber/blob/master/README.md",
+				href: "https://github.com/seethroughdev/obsidian-recipe-grabber#custom-templating",
 				text: "README",
 			}),
 			" for more info."
