@@ -377,7 +377,7 @@ export default class RecipeGrabber extends Plugin {
 			return false;
 		}
 		const subDir = filename;
-		if (!isNaN(imgNum)) {
+		if (imgNum !== false) {
 			filename += "_" + imgNum.toString();
 		}
 		try {
