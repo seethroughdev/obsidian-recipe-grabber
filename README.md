@@ -44,6 +44,16 @@ Cook Time: {{prettyTime cookTime}}
 Total Time: {{prettyTime totalTime}}
 ```
 
+`savedAt`
+Timestamp when recipe is saved to Obsidian. Supports masks available at [dateformat](https://www.npmjs.com/package/dateformat).
+Defaults to `yyyy-mm-dd HH:MM`
+
+```
+Saved: {{savedAt}}
+Time: {{savedAt "HH:MM"}}
+Date: {{savedAt "yyyy-mm-dd"}}
+```
+
 ---
 
 In the meantime, I did my best to make the most recipes I can work out of the box. Please [create ticket](#) if you have suggestions for improving it!

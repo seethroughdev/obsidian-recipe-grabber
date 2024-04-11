@@ -22,6 +22,7 @@ import { fileTypeFromBuffer } from "file-type";
 import * as c from "./constants";
 import * as settings from "./settings";
 import { LoadRecipeModal } from "./modal-load-recipe";
+import dateFormat, { masks } from "dateformat";
 
 export default class RecipeGrabber extends Plugin {
 	settings: settings.PluginSettings;
@@ -179,6 +180,7 @@ export default class RecipeGrabber extends Plugin {
 			return tagString;
 		});
 
+		// Prettify time
 		handlebars.registerHelper("prettyTime", function (thetime) {
 			if (thetime) {
 				return thetime
@@ -189,6 +191,14 @@ export default class RecipeGrabber extends Plugin {
 					.replace("S", "s ");
 			}
 			return "";
+		});
+
+		// Formattable timestamp when saved
+		handlebars.registerHelper("savedAt", function (savedFormat) {
+			if (!savedFormat || typeof savedFormat != "string") {
+				return dateFormat(new Date(), "yyyy-mm-dd HH:MM");
+			}
+			return dateFormat(new Date(), savedFormat);
 		});
 
 		const markdown = handlebars.compile(this.settings.recipeTemplate);
