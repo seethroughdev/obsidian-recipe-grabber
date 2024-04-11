@@ -179,6 +179,18 @@ export default class RecipeGrabber extends Plugin {
 			return tagString;
 		});
 
+		handlebars.registerHelper("prettyTime", function (thetime) {
+			if (thetime) {
+				return thetime
+					.trim()
+					.replace("PT", "")
+					.replace("H", "h ")
+					.replace("M", "m ")
+					.replace("S", "s ");
+			}
+			return "";
+		});
+
 		const markdown = handlebars.compile(this.settings.recipeTemplate);
 		try {
 			const recipes = await this.fetchRecipes(url);

@@ -23,9 +23,26 @@ Prefer your own layout instead? No problem. Just paste a [custom handlebars stri
 
 We're assuming the page has a [json recipe](https://developers.google.com/search/docs/appearance/structured-data/recipe#guided-example) on the page. Make sure to check the [Example Recipe](https://developers.google.com/search/docs/appearance/structured-data/recipe#guided-example) for a list of what fields you can pull. And keep in mind that lots of recipes seem to not stick exactly to the spec. So expect some thing to take a little extra effort to get them there.
 
-A custom handlebar function to split comma separated tags is available, as Obsidian expect tags as a list in its properties. The function is called `splitTags`, and could be used as this in a template: `{{splitTags keywords}}`.
-
 You can also add `{{{json}}}` for the raw json in the template if you like.
+
+#### Custom handlebar functions
+
+`splitTags`  
+Split comma separated tags. Obsidian expect tags as a list in its properties.
+
+```
+tags:
+{{splitTags keywords}}
+```
+
+`prettyTime`
+Fix the ugly PT1H30M string to a prettier 1h 30m formatting
+
+```
+Prep Time: {{prettyTime prepTime}}
+Cook Time: {{prettyTime cookTime}}
+Total Time: {{prettyTime totalTime}}
+```
 
 ---
 
