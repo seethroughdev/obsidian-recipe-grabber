@@ -402,6 +402,10 @@ export default class RecipeGrabber extends Plugin {
 			} else {
 				path = `${normalizePath(this.settings.imgFolder)}/${filename}.${type.ext}`;
 			}
+			const file = app.vault.getAbstractFileByPath(path);
+			if (file && file instanceof TFile) {
+				return file;
+			}
 			const imgPath = await app.vault.createBinary(path, res.arrayBuffer);
 			return imgPath;
 		} catch (err) {
