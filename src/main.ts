@@ -45,10 +45,10 @@ export default class RecipeGrabber extends Plugin {
 				} else {
 					new LoadRecipeModal(
 						this.app,
-						this.addRecipeToMarkdown
+						this.addRecipeToMarkdown,
 					).open();
 				}
-			}
+			},
 		);
 
 		// This adds a simple command that can be triggered anywhere
@@ -70,7 +70,7 @@ export default class RecipeGrabber extends Plugin {
 		this.settings = Object.assign(
 			{},
 			settings.DEFAULT_SETTINGS,
-			await this.loadData()
+			await this.loadData(),
 		);
 	}
 
@@ -169,6 +169,16 @@ export default class RecipeGrabber extends Plugin {
 	 * This function handles all the templating of the recipes
 	 */
 	private addRecipeToMarkdown = async (url: string): Promise<void> => {
+		// Add a handlebar function to split comma separated tags into the obsidian expected array/list
+		handlebars.registerHelper("splitTags", function (tags) {
+			var tagsArray = tags.split(",");
+			var tagString = "";
+			for (const tag of tagsArray) {
+				tagString += "- " + tag.trim() + "\n";
+			}
+			return tagString;
+		});
+
 		const markdown = handlebars.compile(this.settings.recipeTemplate);
 		try {
 			const recipes = await this.fetchRecipes(url);
@@ -181,8 +191,8 @@ export default class RecipeGrabber extends Plugin {
 			// if there isn't a view due to settings or no current file open, lets create a file according to folder settings and open it
 			if (!view) {
 				if (this.settings.folder != "") {
-					await this.folderCheck(this.settings.folder); // this checks if folder exists and creates it if it doesn't.	
-				} 
+					await this.folderCheck(this.settings.folder); // this checks if folder exists and creates it if it doesn't.
+				}
 				const vault = this.app.vault;
 				// try and get recipe title
 				const filename =
@@ -194,8 +204,8 @@ export default class RecipeGrabber extends Plugin {
 					this.settings.folder == ""
 						? `${normalizePath(this.settings.folder)}${filename}.md`
 						: `${normalizePath(
-								this.settings.folder
-						  )}/${filename}.md`; // File path with timestamp and .md extension
+								this.settings.folder,
+							)}/${filename}.md`; // File path with timestamp and .md extension
 				// Create a new untitled file with empty content
 				file = await vault.create(path, "");
 
@@ -217,14 +227,14 @@ export default class RecipeGrabber extends Plugin {
 			// too often, the recipe isn't there or malformed, lets let the user know.
 			if (recipes?.length === 0) {
 				new Notice(
-					"A validated recipe scheme was not found on this page, sorry!\n\nIf you think this is an error, please open an issue on github."
+					"A validated recipe scheme was not found on this page, sorry!\n\nIf you think this is an error, please open an issue on github.",
 				);
 				return;
 			}
 
 			// pages can have multiple recipes, lets add them all
 			let i = 0;
-			for (const recipe of recipes){
+			for (const recipe of recipes) {
 				if (this.settings.debug) {
 					console.log(recipe);
 					console.log(markdown(recipe));
@@ -234,9 +244,13 @@ export default class RecipeGrabber extends Plugin {
 					if (this.settings.imgFolder != "") {
 						await this.folderCheck(this.settings.imgFolder);
 					}
-					const imgFile = await this.fetchImage(recipe.name, recipe.image, file)
+					const imgFile = await this.fetchImage(
+						recipe.name,
+						recipe.image,
+						file,
+					);
 					if (imgFile) {
-						recipe.image = imgFile.path
+						recipe.image = imgFile.path;
 					}
 				}
 				// notice instead of just passing the recipe into markdown, we are
@@ -246,9 +260,9 @@ export default class RecipeGrabber extends Plugin {
 					markdown({
 						...recipe,
 						json: JSON.stringify(recipe, null, 2),
-					})
+					}),
 				);
-			};
+			}
 		} catch (error) {
 			return;
 		}
@@ -302,28 +316,36 @@ export default class RecipeGrabber extends Plugin {
 	/**
 	 * This function fetches the image (as an array buffer) and saves as a file, returns the path of the file.
 	 */
-	private async fetchImage(filename: Recipe["name"], imgUrl: Recipe["image"], file: TFile) : Promise<false | TFile> {
+	private async fetchImage(
+		filename: Recipe["name"],
+		imgUrl: Recipe["image"],
+		file: TFile,
+	): Promise<false | TFile> {
 		if (!imgUrl) {
-			return false
+			return false;
 		}
 		try {
 			const res = await requestUrl({
 				url: String(imgUrl),
 				method: "GET",
 			});
-			const type = await fileTypeFromBuffer(res.arrayBuffer) // type of the image
+			const type = await fileTypeFromBuffer(res.arrayBuffer); // type of the image
 			if (!type) {
-				return false
+				return false;
 			}
 			let path;
 			if (this.settings.imgFolder == "") {
 				//@ts-ignore
-				path = await this.app.vault.getAvailablePathForAttachments(filename, type.ext, file) // fetches the exact save path to create the file according to obsidian default attachment settings
+				path = await this.app.vault.getAvailablePathForAttachments(
+					filename,
+					type.ext,
+					file,
+				); // fetches the exact save path to create the file according to obsidian default attachment settings
 			} else {
-				path = `${normalizePath(this.settings.imgFolder)}/${filename}.${type.ext}` 
+				path = `${normalizePath(this.settings.imgFolder)}/${filename}.${type.ext}`;
 			}
-			const imgPath = await app.vault.createBinary(path, res.arrayBuffer)
-			return imgPath
+			const imgPath = await app.vault.createBinary(path, res.arrayBuffer);
+			return imgPath;
 		} catch (err) {
 			return false;
 		}

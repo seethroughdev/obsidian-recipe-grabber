@@ -14,14 +14,16 @@ If you have this problem, go to the settings of this plugin and remove the leadi
 
 ### Settings
 
-- Save Image: Downloads the recipe image into the vault (save location can be set in the plugin settings). `{{image}}` value will be the link to the downloaded file instead of the direct URL. Disabled by default. If Save Image option is enabled, use `![[{{image}}]]` in the template.
->if settings is toggled off or image save fails, `{{image}}` value will be a direct URL.
+-   Save Image: Downloads the recipe image into the vault (save location can be set in the plugin settings). `{{image}}` value will be the link to the downloaded file instead of the direct URL. Disabled by default. If Save Image option is enabled, use `![[{{image}}]]` in the template.
+    > if settings is toggled off or image save fails, `{{image}}` value will be a direct URL.
 
 ### Custom templating
 
 Prefer your own layout instead? No problem. Just paste a [custom handlebars string template](https://handlebarsjs.com/guide/#simple-expressions) into the settings.
 
 We're assuming the page has a [json recipe](https://developers.google.com/search/docs/appearance/structured-data/recipe#guided-example) on the page. Make sure to check the [Example Recipe](https://developers.google.com/search/docs/appearance/structured-data/recipe#guided-example) for a list of what fields you can pull. And keep in mind that lots of recipes seem to not stick exactly to the spec. So expect some thing to take a little extra effort to get them there.
+
+A custom handlebar function to split comma separated tags is available, as Obsidian expect tags as a list in its properties. The function is called `splitTags`, and could be used as this in a template: `{{splitTags keywords}}`.
 
 You can also add `{{{json}}}` for the raw json in the template if you like.
 
