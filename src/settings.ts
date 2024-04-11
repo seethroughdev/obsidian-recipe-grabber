@@ -7,6 +7,7 @@ export interface PluginSettings {
 	saveInActiveFile: boolean;
 	imgFolder: string;
 	saveImg: boolean;
+	saveImgSubdir: boolean;
 	recipeTemplate: string;
 	unescapeHtml: boolean;
 	debug: boolean;
@@ -17,6 +18,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 	saveInActiveFile: false,
 	imgFolder: "",
 	saveImg: false,
+	saveImgSubdir: false,
 	recipeTemplate: c.DEFAULT_TEMPLATE,
 	unescapeHtml: false,
 	debug: false,
@@ -38,7 +40,7 @@ export class SettingsTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Recipe save folder")
 			.setDesc(
-				"Default recipe import location. If empty, recipe will be imported in the Vault root."
+				"Default recipe import location. If empty, recipe will be imported in the Vault root.",
 			)
 			.addText((text) => {
 				text.setPlaceholder("eg: Recipes")
@@ -52,7 +54,7 @@ export class SettingsTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Save in currently opened file")
 			.setDesc(
-				"Imports the recipe into an active document. if no active document, the above save folder setting will apply."
+				"Imports the recipe into an active document. if no active document, the above save folder setting will apply.",
 			)
 			.addToggle((toggle) => {
 				toggle
@@ -70,25 +72,42 @@ export class SettingsTab extends PluginSettingTab {
 				href: "https://github.com/seethroughdev/obsidian-recipe-grabber#settings",
 				text: "README",
 			}),
-			" for more info."
+			" for more info.",
 		);
-		
+
 		new Setting(containerEl)
 			.setName("Save images")
 			.setDesc(saveImgDescription)
 			.addText((text) => {
-				 text.setPlaceholder("eg: Recipes/RecipeImages")
+				text.setPlaceholder("eg: Recipes/RecipeImages")
 					.setValue(this.plugin.settings.imgFolder)
 					.onChange(async (value) => {
 						this.plugin.settings.imgFolder = value.trim();
 						await this.plugin.saveSettings();
-					})
-				})
+					});
+			})
 			.addToggle((toggle) => {
 				toggle
 					.setValue(this.plugin.settings.saveImg)
 					.onChange(async (value) => {
 						this.plugin.settings.saveImg = value;
+						await this.plugin.saveSettings();
+					});
+			});
+
+		const saveImgSubdirDescription = document.createDocumentFragment();
+		saveImgSubdirDescription.append(
+			"Create a subdirectory for each recipe to store images. A parent directory needs to be set above.",
+		);
+
+		new Setting(containerEl)
+			.setName("Save images in subdirectories")
+			.setDesc(saveImgSubdirDescription)
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.plugin.settings.saveImgSubdir)
+					.onChange(async (value) => {
+						this.plugin.settings.saveImgSubdir = value;
 						await this.plugin.saveSettings();
 					});
 			});
@@ -100,7 +119,7 @@ export class SettingsTab extends PluginSettingTab {
 				href: "https://github.com/seethroughdev/obsidian-recipe-grabber#custom-templating",
 				text: "README",
 			}),
-			" for more info."
+			" for more info.",
 		);
 
 		new Setting(containerEl)
@@ -117,23 +136,23 @@ export class SettingsTab extends PluginSettingTab {
 							c.DEFAULT_TEMPLATE;
 						await this.plugin.saveSettings();
 						this.display();
-					})
+					}),
 			)
 			.addTextArea((text) => {
 				text.setValue(this.plugin.settings.recipeTemplate).onChange(
 					async (value) => {
 						this.plugin.settings.recipeTemplate = value;
 						await this.plugin.saveSettings();
-					}
+					},
 				);
 			});
 
 		new Setting(containerEl)
 			.setName(
-				"Prevent escaping HTML (only do this if you know what you're doing)"
+				"Prevent escaping HTML (only do this if you know what you're doing)",
 			)
 			.setDesc(
-				"This will tell the templating engine to attempt to unescape the HTML in case you want symbols rendered in the edit mode of your recipes."
+				"This will tell the templating engine to attempt to unescape the HTML in case you want symbols rendered in the edit mode of your recipes.",
 			)
 			.addToggle((toggle) => {
 				toggle

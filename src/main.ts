@@ -241,16 +241,55 @@ export default class RecipeGrabber extends Plugin {
 				}
 				// this will download the images and replace the json "recipe.image" value with the path of the image file.
 				if (this.settings.saveImg && file) {
+					const filename = recipe.name.replace(/\ /g, "-"); // We dont want spaces in filenames
 					if (this.settings.imgFolder != "") {
 						await this.folderCheck(this.settings.imgFolder);
+						if (this.settings.saveImgSubdir) {
+							await this.folderCheck(
+								this.settings.imgFolder + "/" + filename,
+							);
+						}
 					}
+					// Getting the recipe main image
 					const imgFile = await this.fetchImage(
-						recipe.name,
+						filename,
 						recipe.image,
 						file,
 					);
 					if (imgFile) {
 						recipe.image = imgFile.path;
+					}
+					// Getting all the images in instructions
+					let imageCounter = 0;
+					for (const instruction of recipe.recipeInstructions) {
+						if (instruction.image) {
+							const imgFile = await this.fetchImage(
+								filename,
+								instruction.image[0],
+								file,
+								imageCounter,
+							);
+							if (imgFile) {
+								imageCounter += 1;
+								instruction.image[0] = imgFile.path;
+							}
+							// Not sure if this would occur, but in theory it's possible
+						} else if (instruction.itemListElement) {
+							for (const element of instruction.itemListElement) {
+								if (element.image) {
+									const imgFile = await this.fetchImage(
+										filename,
+										element.image[0],
+										file,
+										imageCounter,
+									);
+									if (imgFile) {
+										imageCounter += 1;
+										element.image[0] = imgFile.path;
+									}
+								}
+							}
+						}
 					}
 				}
 				// notice instead of just passing the recipe into markdown, we are
@@ -320,9 +359,14 @@ export default class RecipeGrabber extends Plugin {
 		filename: Recipe["name"],
 		imgUrl: Recipe["image"],
 		file: TFile,
+		imgNum = false,
 	): Promise<false | TFile> {
 		if (!imgUrl) {
 			return false;
+		}
+		const subDir = filename;
+		if (!isNaN(imgNum)) {
+			filename += "_" + imgNum.toString();
 		}
 		try {
 			const res = await requestUrl({
@@ -341,6 +385,8 @@ export default class RecipeGrabber extends Plugin {
 					type.ext,
 					file,
 				); // fetches the exact save path to create the file according to obsidian default attachment settings
+			} else if (this.settings.saveImgSubdir) {
+				path = `${normalizePath(this.settings.imgFolder)}/${subDir}/${filename}.${type.ext}`;
 			} else {
 				path = `${normalizePath(this.settings.imgFolder)}/${filename}.${type.ext}`;
 			}
