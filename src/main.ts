@@ -172,6 +172,9 @@ export default class RecipeGrabber extends Plugin {
 	private addRecipeToMarkdown = async (url: string): Promise<void> => {
 		// Add a handlebar function to split comma separated tags into the obsidian expected array/list
 		handlebars.registerHelper("splitTags", function (tags) {
+			if (!tags || typeof tags != "string") {
+				return "";
+			}
 			var tagsArray = tags.split(",");
 			var tagString = "";
 			for (const tag of tagsArray) {
@@ -182,13 +185,15 @@ export default class RecipeGrabber extends Plugin {
 
 		// Prettify time
 		handlebars.registerHelper("prettyTime", function (thetime) {
-			if (thetime) {
-				return thetime
-					.trim()
-					.replace("PT", "")
-					.replace("H", "h ")
-					.replace("M", "m ")
-					.replace("S", "s ");
+			if (!thetime || typeof thetime != "string") {
+				return "";
+			}
+			return thetime
+				.trim()
+				.replace("PT", "")
+				.replace("H", "h ")
+				.replace("M", "m ")
+				.replace("S", "s ");
 			}
 			return "";
 		});
