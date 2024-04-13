@@ -183,27 +183,47 @@ export default class RecipeGrabber extends Plugin {
 			return tagString;
 		});
 
-		// Prettify time
-		handlebars.registerHelper("prettyTime", function (thetime) {
-			if (!thetime || typeof thetime != "string") {
+		handlebars.registerHelper("magicTime", function (arg1, arg2) {
+			if (typeof arg1 === "undefined") {
+				// catch undefined / empty
 				return "";
 			}
-			return thetime
-				.trim()
-				.replace("PT", "")
-				.replace("H", "h ")
-				.replace("M", "m ")
-				.replace("S", "s ");
-			}
-			return "";
-		});
-
-		// Formattable timestamp when saved
-		handlebars.registerHelper("savedAt", function (savedFormat) {
-			if (!savedFormat || typeof savedFormat != "string") {
+			// Handlebars appends an ubject to the arguments
+			if (arguments.length == 1) {
+				// magicTime
 				return dateFormat(new Date(), "yyyy-mm-dd HH:MM");
+			} else if (arguments.length == 2) {
+				if (new Date(arg1) == "Invalid Date") {
+					if (arg1.trim().startsWith("PT")) {
+						// magicTime PT1H50M
+						return arg1
+							.trim()
+							.replace("PT", "")
+							.replace("H", "h ")
+							.replace("M", "m ")
+							.replace("S", "s ");
+					}
+					try {
+						// magicTime "dd-mm-yyyy HH:MM"
+						let returnDate = dateFormat(new Date(), arg1);
+						return returnDate;
+					} catch (error) {
+						return "";
+					}
+				}
+				return dateFormat(new Date(arg1), "yyyy-mm-dd HH:MM");
+				// magicTime datePublished
+			} else if (arguments.length == 3) {
+				// magicTime datePublished "dd-mm-yyyy HH:MM"
+				if (new Date(arg1) == "Invalid Date") {
+					// Invalid input
+					return "Error in template or source";
+				}
+				return dateFormat(new Date(arg1), arg2);
+			} else {
+				// Unexpected amount of arguments
+				return "Error in template";
 			}
-			return dateFormat(new Date(), savedFormat);
 		});
 
 		const markdown = handlebars.compile(this.settings.recipeTemplate);

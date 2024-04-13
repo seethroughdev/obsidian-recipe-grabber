@@ -35,23 +35,29 @@ tags:
 {{splitTags keywords}}
 ```
 
-`prettyTime`
-Fix the ugly PT1H30M string to a prettier 1h 30m formatting
+`magicTime`
+Attempts to handle anything included with time and date.  
+Change the ugly PT1H30M string to a prettier 1h 30min formatting.  
+Insert or reformat existing timestamps using any masks available at [dateformat](https://www.npmjs.com/package/dateformat), defaults to `yyyy-mm-dd HH:MM`.
 
 ```
-Prep Time: {{prettyTime prepTime}}
-Cook Time: {{prettyTime cookTime}}
-Total Time: {{prettyTime totalTime}}
+DateSaved: {{magicTime}}
+DateSaved2: {{magicTime "dd-mm-yyyy HH:MM"}}
+CookTime: {{magicTime cookTime}}
+TotalTime: {{magicTime totalTime}}
+DatePublished1: {{magicTime datePublished}}
+DatePublished2: {{magicTime datePublished "dd-mm-yyyy HH:MM"}}
 ```
 
-`savedAt`
-Timestamp when recipe is saved to Obsidian. Supports masks available at [dateformat](https://www.npmjs.com/package/dateformat).
-Defaults to `yyyy-mm-dd HH:MM`
+Would return something like
 
 ```
-Saved: {{savedAt}}
-Time: {{savedAt "HH:MM"}}
-Date: {{savedAt "yyyy-mm-dd"}}
+DateSaved: 2024-04-13 20:10
+DateSaved2: 13-04-2024 20:10
+CookTime: 15m
+TotalTime: 1h 5m
+DatePublished1: 2017-07-27 00:14
+DatePublished2: 27-07-2017 00:14
 ```
 
 ---
