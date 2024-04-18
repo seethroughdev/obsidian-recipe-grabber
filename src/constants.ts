@@ -6,7 +6,8 @@ export const CMD_INSERT_RECIPE = "cmd-insert-recipe";
 /* ---------------------------- DEFAULT TEMPLATE ---------------------------- */
 
 export const DEFAULT_TEMPLATE = `---
-tags: recipe 
+tags: 
+- recipe 
 created: {{datePublished}}
 author: {{author.name}}
 url: {{url}} 
