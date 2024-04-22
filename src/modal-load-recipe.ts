@@ -29,7 +29,7 @@ export class LoadRecipeModal extends Modal {
 				.onClick(() => {
 					this.close();
 					this.onSubmit(this.result);
-				})
+				}),
 		);
 	}
 

@@ -22,7 +22,7 @@ import { fileTypeFromBuffer } from "file-type";
 import * as c from "./constants";
 import * as settings from "./settings";
 import { LoadRecipeModal } from "./modal-load-recipe";
-import dateFormat, { masks } from "dateformat";
+import dateFormat from "dateformat";
 
 export default class RecipeGrabber extends Plugin {
 	settings: settings.PluginSettings;
@@ -175,13 +175,18 @@ export default class RecipeGrabber extends Plugin {
 			if (!tags || typeof tags != "string") {
 				return "";
 			}
-			var tagsArray = tags.split(",");
-			var tagString = "";
+			const tagsArray = tags.split(",");
+			let tagString = "";
 			for (const tag of tagsArray) {
 				tagString += "- " + tag.trim() + "\n";
 			}
 			return tagString;
 		});
+
+		// quick function to check if a string is a valid date
+		function isValidDate(d: string): boolean {
+			return !isNaN(Date.parse(d));
+		}
 
 		handlebars.registerHelper("magicTime", function (arg1, arg2) {
 			if (typeof arg1 === "undefined") {
@@ -189,11 +194,12 @@ export default class RecipeGrabber extends Plugin {
 				return "";
 			}
 			// Handlebars appends an ubject to the arguments
-			if (arguments.length == 1) {
+			if (arguments.length === 1) {
 				// magicTime
 				return dateFormat(new Date(), "yyyy-mm-dd HH:MM");
-			} else if (arguments.length == 2) {
-				if (new Date(arg1) == "Invalid Date") {
+			} else if (arguments.length === 2) {
+				// check if arg1 is a valid date
+				if (isValidDate(arg1)) {
 					if (arg1.trim().startsWith("PT")) {
 						// magicTime PT1H50M
 						return arg1
@@ -205,8 +211,7 @@ export default class RecipeGrabber extends Plugin {
 					}
 					try {
 						// magicTime "dd-mm-yyyy HH:MM"
-						let returnDate = dateFormat(new Date(), arg1);
-						return returnDate;
+						return dateFormat(new Date(), arg1);
 					} catch (error) {
 						return "";
 					}
@@ -215,7 +220,7 @@ export default class RecipeGrabber extends Plugin {
 				// magicTime datePublished
 			} else if (arguments.length == 3) {
 				// magicTime datePublished "dd-mm-yyyy HH:MM"
-				if (new Date(arg1) == "Invalid Date") {
+				if (isValidDate(arg1)) {
 					// Invalid input
 					return "Error in template or source";
 				}
@@ -280,7 +285,6 @@ export default class RecipeGrabber extends Plugin {
 			}
 
 			// pages can have multiple recipes, lets add them all
-			let i = 0;
 			for (const recipe of recipes) {
 				if (this.settings.debug) {
 					console.log(recipe);
@@ -288,7 +292,12 @@ export default class RecipeGrabber extends Plugin {
 				}
 				// this will download the images and replace the json "recipe.image" value with the path of the image file.
 				if (this.settings.saveImg && file) {
-					const filename = recipe.name.replace(/\ /g, "-"); // We dont want spaces in filenames
+					// replace any whitespace with dashes
+					const filename = (recipe?.name as string)?.replace(/\s+/g, "-");
+					if (!filename) {
+						return;
+					}
+
 					if (this.settings.imgFolder != "") {
 						await this.folderCheck(this.settings.imgFolder);
 						if (this.settings.saveImgSubdir) {
@@ -306,6 +315,11 @@ export default class RecipeGrabber extends Plugin {
 					if (imgFile) {
 						recipe.image = imgFile.path;
 					}
+
+					if (!Array.isArray(recipe.recipeInstructions)) {
+						return;
+					}
+
 					// Getting all the images in instructions
 					let imageCounter = 0;
 					for (const instruction of recipe.recipeInstructions) {
@@ -406,15 +420,16 @@ export default class RecipeGrabber extends Plugin {
 		filename: Recipe["name"],
 		imgUrl: Recipe["image"],
 		file: TFile,
-		imgNum = false,
+		imgNum?: number,
 	): Promise<false | TFile> {
 		if (!imgUrl) {
 			return false;
 		}
 		const subDir = filename;
-		if (imgNum !== false) {
+		if (imgNum && !isNaN(imgNum)) {
 			filename += "_" + imgNum.toString();
 		}
+
 		try {
 			const res = await requestUrl({
 				url: String(imgUrl),
@@ -424,25 +439,23 @@ export default class RecipeGrabber extends Plugin {
 			if (!type) {
 				return false;
 			}
-			let path;
+			let path = "";
 			if (this.settings.imgFolder == "") {
-				//@ts-ignore
-				path = await this.app.vault.getAvailablePathForAttachments(
-					filename,
-					type.ext,
-					file,
-				); // fetches the exact save path to create the file according to obsidian default attachment settings
+				path = await (
+					this.app.vault as any
+				)?.getAvailablePathForAttachments(filename, type.ext, file); // fetches the exact save path to create the file according to obsidian default attachment settings
 			} else if (this.settings.saveImgSubdir) {
 				path = `${normalizePath(this.settings.imgFolder)}/${subDir}/${filename}.${type.ext}`;
 			} else {
 				path = `${normalizePath(this.settings.imgFolder)}/${filename}.${type.ext}`;
 			}
-			const file = app.vault.getAbstractFileByPath(path);
-			if (file && file instanceof TFile) {
-				return file;
+
+			const fileByPath = app.vault.getAbstractFileByPath(path);
+			if (fileByPath && fileByPath instanceof TFile) {
+				return fileByPath;
 			}
-			const imgPath = await app.vault.createBinary(path, res.arrayBuffer);
-			return imgPath;
+
+			return await app.vault.createBinary(path, res.arrayBuffer);
 		} catch (err) {
 			return false;
 		}
