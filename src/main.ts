@@ -199,7 +199,7 @@ export default class RecipeGrabber extends Plugin {
 				return dateFormat(new Date(), "yyyy-mm-dd HH:MM");
 			} else if (arguments.length === 2) {
 				// check if arg1 is a valid date
-				if (isValidDate(arg1)) {
+				if (!isValidDate(arg1)) {
 					if (arg1.trim().startsWith("PT")) {
 						// magicTime PT1H50M
 						return arg1
@@ -218,9 +218,9 @@ export default class RecipeGrabber extends Plugin {
 				}
 				return dateFormat(new Date(arg1), "yyyy-mm-dd HH:MM");
 				// magicTime datePublished
-			} else if (arguments.length == 3) {
+			} else if (arguments.length === 3) {
 				// magicTime datePublished "dd-mm-yyyy HH:MM"
-				if (isValidDate(arg1)) {
+				if (!isValidDate(arg1)) {
 					// Invalid input
 					return "Error in template or source";
 				}
@@ -253,7 +253,7 @@ export default class RecipeGrabber extends Plugin {
 						: new Date().getTime(); // Generate a unique timestamp
 
 				const path =
-					this.settings.folder == ""
+					this.settings.folder === ""
 						? `${normalizePath(this.settings.folder)}${filename}.md`
 						: `${normalizePath(
 								this.settings.folder,
@@ -440,7 +440,7 @@ export default class RecipeGrabber extends Plugin {
 				return false;
 			}
 			let path = "";
-			if (this.settings.imgFolder == "") {
+			if (this.settings.imgFolder === "") {
 				path = await (
 					this.app.vault as any
 				)?.getAvailablePathForAttachments(filename, type.ext, file); // fetches the exact save path to create the file according to obsidian default attachment settings
