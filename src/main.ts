@@ -199,32 +199,32 @@ export default class RecipeGrabber extends Plugin {
 				return dateFormat(new Date(), "yyyy-mm-dd HH:MM");
 			} else if (arguments.length === 2) {
 				// check if arg1 is a valid date
-				if (!isValidDate(arg1)) {
-					if (arg1.trim().startsWith("PT")) {
-						// magicTime PT1H50M
-						return arg1
-							.trim()
-							.replace("PT", "")
-							.replace("H", "h ")
-							.replace("M", "m ")
-							.replace("S", "s ");
-					}
-					try {
-						// magicTime "dd-mm-yyyy HH:MM"
-						return dateFormat(new Date(), arg1);
-					} catch (error) {
-						return "";
-					}
+				if (isValidDate(arg1)) {
+					// magicTime datePublished
+					return dateFormat(new Date(arg1), "yyyy-mm-dd HH:MM");
 				}
-				return dateFormat(new Date(arg1), "yyyy-mm-dd HH:MM");
-				// magicTime datePublished
+				if (arg1.trim().startsWith("PT")) {
+					// magicTime PT1H50M
+					return arg1
+						.trim()
+						.replace("PT", "")
+						.replace("H", "h ")
+						.replace("M", "m ")
+						.replace("S", "s ");
+				}
+				try {
+					// magicTime "dd-mm-yyyy HH:MM"
+					return dateFormat(new Date(), arg1);
+				} catch (error) {
+					return "";
+				}
 			} else if (arguments.length === 3) {
 				// magicTime datePublished "dd-mm-yyyy HH:MM"
-				if (!isValidDate(arg1)) {
-					// Invalid input
-					return "Error in template or source";
+				if (isValidDate(arg1)) {
+					return dateFormat(new Date(arg1), arg2);
 				}
-				return dateFormat(new Date(arg1), arg2);
+				// Invalid input
+				return "Error in template or source";
 			} else {
 				// Unexpected amount of arguments
 				return "Error in template";
@@ -293,7 +293,10 @@ export default class RecipeGrabber extends Plugin {
 				// this will download the images and replace the json "recipe.image" value with the path of the image file.
 				if (this.settings.saveImg && file) {
 					// replace any whitespace with dashes
-					const filename = (recipe?.name as string)?.replace(/\s+/g, "-");
+					const filename = (recipe?.name as string)?.replace(
+						/\s+/g,
+						"-",
+					);
 					if (!filename) {
 						return;
 					}
