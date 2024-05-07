@@ -359,14 +359,20 @@ export default class RecipeGrabber extends Plugin {
 				// notice instead of just passing the recipe into markdown, we are
 				// adding a key called 'json'. This is so we can see the raw json in the
 				// template if a user wants it.
-				view?.editor.replaceSelection(
-					markdown({
-						...recipe,
-						json: JSON.stringify(recipe, null, 2),
-					}),
-				);
+				const md = markdown({
+					...recipe,
+					json: JSON.stringify(recipe, null, 2),
+				});
+				if (view.getMode() === "source") {
+					view.editor.replaceSelection(md);
+				} else {
+					await this.app.vault.append(view.file, md);
+				}
 			}
 		} catch (error) {
+			if (this.settings.debug) {
+				console.error(error);
+			}
 			return;
 		}
 	};
