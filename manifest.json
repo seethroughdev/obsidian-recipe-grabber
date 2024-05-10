@@ -1,10 +1,10 @@
 {
-	"id": "recipe-grabber",
-	"name": "Recipe Grabber",
-	"version": "0.19.0",
-	"minAppVersion": "0.15.0",
-	"description": "Quickly grab the important contents of any online recipe.",
-	"author": "seethroughdev",
-	"authorUrl": "https://github.com/seethroughdev",
-	"isDesktopOnly": false
+  "id": "recipe-grabber",
+  "name": "Recipe Grabber",
+  "version": "0.20.0",
+  "minAppVersion": "0.15.0",
+  "description": "Quickly grab the important contents of any online recipe.",
+  "author": "seethroughdev",
+  "authorUrl": "https://github.com/seethroughdev",
+  "isDesktopOnly": false
 }
