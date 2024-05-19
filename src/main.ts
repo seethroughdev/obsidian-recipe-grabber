@@ -249,7 +249,9 @@ export default class RecipeGrabber extends Plugin {
 				// try and get recipe title
 				const filename =
 					recipes?.length > 0 && recipes?.[0]?.name
-						? recipes[0].name
+						? (recipes[0].name as string)
+								// replace disallowed characters
+								.replace(/"|\*|\\|\/|<|>|:|\?/g, "")
 						: new Date().getTime(); // Generate a unique timestamp
 
 				const path =
@@ -292,11 +294,11 @@ export default class RecipeGrabber extends Plugin {
 				}
 				// this will download the images and replace the json "recipe.image" value with the path of the image file.
 				if (this.settings.saveImg && file) {
-					// replace any whitespace with dashes
-					const filename = (recipe?.name as string)?.replace(
-						/\s+/g,
-						"-",
-					);
+					const filename = (recipe?.name as string)
+						// replace any whitespace with dashes
+						?.replace(/\s+/g, "-")
+						// replace disallowed characters
+						.replace(/"|\*|\\|\/|<|>|:|\?/g, "");
 					if (!filename) {
 						return;
 					}
