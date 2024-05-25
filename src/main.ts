@@ -46,6 +46,7 @@ export default class RecipeGrabber extends Plugin {
 				} else {
 					new LoadRecipeModal(
 						this.app,
+						this.settings,
 						this.addRecipeToMarkdown,
 					).open();
 				}
@@ -57,7 +58,11 @@ export default class RecipeGrabber extends Plugin {
 			id: c.CMD_OPEN_MODAL,
 			name: "Grab Recipe",
 			callback: () => {
-				new LoadRecipeModal(this.app, this.addRecipeToMarkdown).open();
+				new LoadRecipeModal(
+					this.app,
+					this.settings,
+					this.addRecipeToMarkdown,
+				).open();
 			},
 		});
 
@@ -257,9 +262,7 @@ export default class RecipeGrabber extends Plugin {
 				const path =
 					this.settings.folder === ""
 						? `${normalizePath(this.settings.folder)}${filename}.md`
-						: `${normalizePath(
-								this.settings.folder,
-							)}/${filename}.md`; // File path with timestamp and .md extension
+						: `${normalizePath(this.settings.folder)}/${filename}.md`; // File path with timestamp and .md extension
 				// Create a new untitled file with empty content
 				file = await vault.create(path, "");
 
@@ -486,19 +489,22 @@ export default class RecipeGrabber extends Plugin {
 		// this awfully ugly function will traverse the object and unescape all strings, and pass
 		// anything else back in to check again
 		const traverse = (obj: any) => {
+			if (!obj) return;
+
 			Object.keys(obj).forEach((key) => {
-				if (typeof obj[key] === "string") {
-					obj[key] = unescape(obj[key]);
-				} else if (Array.isArray(obj[key])) {
-					obj[key].forEach((item: unknown) => {
-						if (typeof item === "string") {
-							item = unescape(item);
-						} else if (typeof item === "object") {
-							traverse(item);
+				let v = obj[key];
+				if (typeof v === "string") {
+					v = unescape(v);
+				} else if (Array.isArray(v)) {
+					v.forEach((i: unknown) => {
+						if (typeof i === "string") {
+							i = unescape(i);
+						} else if (typeof i === "object") {
+							traverse(i);
 						}
 					});
-				} else if (typeof obj[key] === "object") {
-					traverse(obj[key]);
+				} else if (typeof v === "object") {
+					traverse(v);
 				}
 			});
 		};
