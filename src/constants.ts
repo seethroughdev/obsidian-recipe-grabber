@@ -11,6 +11,7 @@ tags:
 created: {{datePublished}}
 author: {{author.name}}
 url: {{url}} 
+name: {{name}}
 ---
 
 # [{{{name}}}]({{url}})
