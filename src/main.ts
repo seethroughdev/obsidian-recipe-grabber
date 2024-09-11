@@ -313,7 +313,7 @@ export default class RecipeGrabber extends Plugin {
    * This function checks for an existing folder (creates if it doesn't exist)
    */
   private async folderCheck(foldername: string) {
-    const vault = app.vault;
+    const { vault } = this.app;
     const folderPath = normalizePath(foldername);
     const folder = vault.getAbstractFileByPath(folderPath);
     if (folder && folder instanceof TFolder) {
@@ -393,12 +393,12 @@ export default class RecipeGrabber extends Plugin {
         path = `${normalizePath(this.settings.imgFolder)}/${filename}.${type.ext}`;
       }
 
-      const fileByPath = app.vault.getAbstractFileByPath(path);
+      const fileByPath = this.app.vault.getAbstractFileByPath(path);
       if (fileByPath && fileByPath instanceof TFile) {
         return fileByPath;
       }
 
-      return await app.vault.createBinary(path, res.arrayBuffer);
+      return await this.app.vault.createBinary(path, res.arrayBuffer);
     } catch (err) {
       return false;
     }
