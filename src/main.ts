@@ -94,7 +94,8 @@ export default class RecipeGrabber extends Plugin {
           "Content-Type": "text/html",
         },
       });
-    } catch (err) {
+    } catch (e) {
+      console.log(e);
       return Promise.reject("Not a valid url");
     }
 
@@ -297,8 +298,8 @@ export default class RecipeGrabber extends Plugin {
 
         if (view.getMode() === "source") {
           view.editor.replaceSelection(md);
-        } else {
-          view.file && (await this.app.vault.append(view.file, md));
+        } else if (view.file) {
+          await this.app.vault.append(view.file, md);
         }
       }
     } catch (error) {
@@ -399,7 +400,8 @@ export default class RecipeGrabber extends Plugin {
       }
 
       return await this.app.vault.createBinary(path, res.arrayBuffer);
-    } catch (err) {
+    } catch (e) {
+      console.log(e);
       return false;
     }
   }

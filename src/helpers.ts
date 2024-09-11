@@ -49,7 +49,8 @@ export const addHelpers = () => {
       try {
         // magicTime "dd-mm-yyyy HH:MM"
         return dateFormat(new Date(), arg1);
-      } catch (error) {
+      } catch (e) {
+        console.log(e);
         return "";
       }
     } else if (arguments.length === 3) {
