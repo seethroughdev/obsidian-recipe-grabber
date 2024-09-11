@@ -19,6 +19,7 @@ import * as handlebars from "handlebars";
 import type { Recipe } from "schema-dts";
 import * as cheerio from "cheerio";
 import { fileTypeFromBuffer } from "file-type";
+import filenamify from "filenamify";
 import * as c from "./constants";
 import * as settings from "./settings";
 import { LoadRecipeModal } from "./modal-load-recipe";
@@ -233,16 +234,15 @@ export default class RecipeGrabber extends Plugin {
         const vault = this.app.vault;
         // try and get recipe title
         const filename =
-          recipes?.length > 0 && recipes?.[0]?.name
-            ? (recipes[0].name as string)
-                // replace disallowed characters
-                .replace(/"|\*|\\|\/|<|>|:|\?/g, "")
+          recipes?.length > 0 && typeof recipes?.[0]?.name === "string"
+            ? filenamify(recipes[0].name, { replacement: "-" })
             : new Date().getTime(); // Generate a unique timestamp
 
         const path =
           this.settings.folder === ""
             ? `${normalizePath(this.settings.folder)}${filename}.md`
             : `${normalizePath(this.settings.folder)}/${filename}.md`; // File path with timestamp and .md extension
+
         // Create a new untitled file with empty content
         file = await vault.create(path, "");
 
@@ -353,7 +353,7 @@ export default class RecipeGrabber extends Plugin {
         if (view.getMode() === "source") {
           view.editor.replaceSelection(md);
         } else {
-          await this.app.vault.append(view.file, md);
+          view.file && (await this.app.vault.append(view.file, md));
         }
       }
     } catch (error) {
