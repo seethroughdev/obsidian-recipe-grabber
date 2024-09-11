@@ -15,7 +15,7 @@ import {
   TFolder,
   TFile,
 } from "obsidian";
-import * as handlebars from "handlebars";
+
 import type { Recipe } from "schema-dts";
 import * as cheerio from "cheerio";
 import { fileTypeFromBuffer } from "file-type";
@@ -23,7 +23,11 @@ import filenamify from "filenamify";
 import * as c from "./constants";
 import * as settings from "./settings";
 import { LoadRecipeModal } from "./modal-load-recipe";
-import dateFormat from "dateformat";
+
+import { addHelpers } from "./helpers";
+
+// setup handlebars in separate file
+const h = addHelpers();
 
 export default class RecipeGrabber extends Plugin {
   settings: settings.PluginSettings;
@@ -157,67 +161,8 @@ export default class RecipeGrabber extends Plugin {
    */
   private addRecipeToMarkdown = async (url: string): Promise<void> => {
     // Add a handlebar function to split comma separated tags into the obsidian expected array/list
-    handlebars.registerHelper("splitTags", function (tags) {
-      if (!tags || typeof tags != "string") {
-        return "";
-      }
-      const tagsArray = tags.split(",");
-      let tagString = "";
-      for (const tag of tagsArray) {
-        tagString += "- " + tag.trim() + "\n";
-      }
-      return tagString;
-    });
 
-    // quick function to check if a string is a valid date
-    function isValidDate(d: string): boolean {
-      return !isNaN(Date.parse(d));
-    }
-
-    handlebars.registerHelper("magicTime", function (arg1, arg2) {
-      if (typeof arg1 === "undefined") {
-        // catch undefined / empty
-        return "";
-      }
-      // Handlebars appends an ubject to the arguments
-      if (arguments.length === 1) {
-        // magicTime
-        return dateFormat(new Date(), "yyyy-mm-dd HH:MM");
-      } else if (arguments.length === 2) {
-        // check if arg1 is a valid date
-        if (isValidDate(arg1)) {
-          // magicTime datePublished
-          return dateFormat(new Date(arg1), "yyyy-mm-dd HH:MM");
-        }
-        if (arg1.trim().startsWith("PT")) {
-          // magicTime PT1H50M
-          return arg1
-            .trim()
-            .replace("PT", "")
-            .replace("H", "h ")
-            .replace("M", "m ")
-            .replace("S", "s ");
-        }
-        try {
-          // magicTime "dd-mm-yyyy HH:MM"
-          return dateFormat(new Date(), arg1);
-        } catch (error) {
-          return "";
-        }
-      } else if (arguments.length === 3) {
-        // magicTime datePublished "dd-mm-yyyy HH:MM"
-        if (isValidDate(arg1)) {
-          return dateFormat(new Date(arg1), arg2);
-        }
-        // Invalid input
-        return "Error in template or source";
-      } else {
-        // Unexpected amount of arguments
-        return "Error in template";
-      }
-    });
-
-    const markdown = handlebars.compile(this.settings.recipeTemplate);
+    const markdown = h.compile(this.settings.recipeTemplate);
     try {
       const recipes = await this.fetchRecipes(url);
       let view = this.settings.saveInActiveFile
