@@ -23,6 +23,19 @@ export class LoadRecipeModal extends Modal {
         this.result = value;
       });
       text.inputEl.style.width = "100%";
+
+      // Listen for enter key
+      text.inputEl.addEventListener("keypress", (event: KeyboardEvent) => {
+        if (event.key === "Enter" && this.result) {
+          this.close();
+          this.onSubmit(this.result);
+        }
+      });
+
+      // Focus the input automatically
+      setTimeout(() => {
+        text.inputEl.focus();
+      }, 10);
     });
 
     new Setting(contentEl).addButton((btn) =>
