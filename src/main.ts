@@ -35,9 +35,9 @@ export default class RecipeGrabber extends Plugin {
       const selection = view?.editor.getSelection()?.trim();
       // try and make sure its a url
       if (selection?.startsWith("http") && selection.split(" ").length === 1) {
-        this.addRecipeToMarkdown(selection);
+        this.addRecipesToMarkdown(selection);
       } else {
-        new LoadRecipeModal(this.app, this.addRecipeToMarkdown).open();
+        new LoadRecipeModal(this.app, this.addRecipesToMarkdown).open();
       }
     });
 
@@ -46,7 +46,7 @@ export default class RecipeGrabber extends Plugin {
       id: c.CMD_OPEN_MODAL,
       name: "Grab Recipe",
       callback: () => {
-        new LoadRecipeModal(this.app, this.addRecipeToMarkdown).open();
+        new LoadRecipeModal(this.app, this.addRecipesToMarkdown).open();
       },
     });
 
@@ -54,7 +54,7 @@ export default class RecipeGrabber extends Plugin {
     this.addSettingTab(new settings.SettingsTab(this.app, this));
   }
 
-  onunload() {}
+  onunload() { }
 
   async loadSettings() {
     this.settings = Object.assign(
@@ -113,6 +113,8 @@ export default class RecipeGrabber extends Plugin {
         json.recipeIngredient = [json.recipeIngredient];
       }
 
+      new Notice(`Fetched recipe: ${json}`);
+
       recipes.push(json);
     };
 
@@ -150,6 +152,16 @@ export default class RecipeGrabber extends Plugin {
 
     return recipes;
   }
+
+  /**
+   * This function handles all the templating of the recipes
+   */
+  private addRecipesToMarkdown = async (urls: string): Promise<void> => {
+    for (var url of urls.split(",")) {
+      this.addRecipeToMarkdown(url)
+    }
+  }
+
 
   /**
    * This function handles all the templating of the recipes
@@ -235,8 +247,8 @@ export default class RecipeGrabber extends Plugin {
         const filename =
           recipes?.length > 0 && recipes?.[0]?.name
             ? (recipes[0].name as string)
-                // replace disallowed characters
-                .replace(/"|\*|\\|\/|<|>|:|\?/g, "")
+              // replace disallowed characters
+              .replace(/"|\*|\\|\/|<|>|:|\?/g, "")
             : new Date().getTime(); // Generate a unique timestamp
 
         const path =
