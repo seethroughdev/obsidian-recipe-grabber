@@ -112,8 +112,6 @@ export default class RecipeGrabber extends Plugin {
       if (typeof json.recipeIngredient === "string") {
         json.recipeIngredient = [json.recipeIngredient];
       }
-
-      recipes.push(json);
     };
 
     /**
@@ -133,9 +131,49 @@ export default class RecipeGrabber extends Plugin {
               : schema?.["@type"] === "Recipe"
           ) {
             normalizeSchema(schema);
+            recipes.push(schema);
           }
         }
       });
+    }
+
+    function parseMicrodata(el: cheerio.Element): void {
+      // manually parse the recipe: get all tags with itemprop attribute
+      const recipe: any = {};
+      $(el)
+        .find("[itemprop]")
+        .each((_, item) => {
+          const $item = $(item);
+          const itemprop = $item.attr("itemprop");
+          let value: any;
+          if ($item.is("meta") && ($item.attr("content") || "").trim() !== "") {
+            value = $item.attr("content")?.trim();
+          } else if (
+            $item.is("img") &&
+            ($item.attr("src") || "").trim() !== ""
+          ) {
+            value = $item.attr("src")?.trim();
+          } else {
+            value = $item.text().trim();
+          }
+
+          // handle multiple recipeIngredient and recipeInstructions
+          if (itemprop === "recipeIngredient") {
+            if (!Array.isArray(recipe[itemprop])) {
+              recipe[itemprop] = [];
+            }
+            recipe[itemprop].push(value);
+          } else if (itemprop === "recipeInstructions") {
+            if (!Array.isArray(recipe[itemprop])) {
+              recipe[itemprop] = [];
+            }
+            recipe[itemprop].push({ text: value });
+          } else {
+            recipe[itemprop as string] = value;
+          }
+        });
+      normalizeSchema(recipe);
+      recipes.push(recipe);
     }
 
     // parse the dom of the page and look for any schema.org/Recipe
@@ -148,6 +186,14 @@ export default class RecipeGrabber extends Plugin {
       handleSchemas(data);
     });
 
+    if (recipes?.length === 0) {
+      $(
+        '[itemtype="http://schema.org/Recipe"], [itemtype="https://schema.org/Recipe"]',
+      ).each((_, el) => {
+        parseMicrodata(el);
+      });
+    }
+
     return recipes;
   }
 
@@ -155,6 +201,14 @@ export default class RecipeGrabber extends Plugin {
    * This function handles all the templating of the recipes
    */
   private addRecipeToMarkdown = async (url: string): Promise<void> => {
+    handlebars.registerHelper("tagify", function (arg1) {
+      if (typeof arg1 != "string") {
+        return "";
+      }
+      // replace all whitespace with _ and lowercase
+      return arg1.replace(/\s+/g, "_").toLowerCase();
+    });
+
     // Add a handlebar function to split comma separated tags into the obsidian expected array/list
     handlebars.registerHelper("splitTags", function (tags) {
       if (!tags || typeof tags != "string") {
